@@ -1,0 +1,30 @@
+<!-- stakeholders/templates/stakeholders/stakeholder_form.html -->
+{% extends 'stakeholders/base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <h2>{% if form.instance.pk %}Edit{% else %}Add New{% endif %} Stakeholder</h2>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="{% url 'stakeholder-list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

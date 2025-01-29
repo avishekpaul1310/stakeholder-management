@@ -1,0 +1,20 @@
+<!-- stakeholders/templates/stakeholders/stakeholder_confirm_delete.html -->
+{% extends 'stakeholders/base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Delete Stakeholder</h3>
+                <p class="card-text">Are you sure you want to delete "{{ object.name }}"?</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                    <a href="{% url 'stakeholder-list' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
