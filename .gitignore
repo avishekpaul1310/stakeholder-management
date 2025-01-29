@@ -1,3 +1,4 @@
+# Python
 *.pyc
 __pycache__/
 *.pyo
@@ -6,7 +7,20 @@ __pycache__/
 env/
 venv/
 .env
-*.sqlite3
-.DS_Store
+
+# Django
+*.log
+local_settings.py
 db.sqlite3
+db.sqlite3-journal
 media/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
