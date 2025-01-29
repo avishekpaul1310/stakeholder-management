@@ -1,0 +1,88 @@
+<!-- stakeholders/templates/stakeholders/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stakeholder Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'stakeholder-list' %}">Stakeholder Management</a>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        {% block content %}
+        {% endblock %}
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+<!-- stakeholders/templates/stakeholders/stakeholder_list.html -->
+{% extends 'stakeholders/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Stakeholders</h2>
+    <a href="{% url 'stakeholder-create' %}" class="btn btn-primary">Add Stakeholder</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stakeholder in stakeholders %}
+            <tr>
+                <td>{{ stakeholder.name }}</td>
+                <td>{{ stakeholder.get_role_display }}</td>
+                <td>{{ stakeholder.email }}</td>
+                <td>{{ stakeholder.phone }}</td>
+                <td>
+                    <a href="{% url 'stakeholder-update' stakeholder.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                    <a href="{% url 'stakeholder-delete' stakeholder.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+<!-- stakeholders/templates/stakeholders/stakeholder_form.html -->
+{% extends 'stakeholders/base.html' %}
+
+{% block content %}
+<h2>{% if form.instance.pk %}Edit{% else %}Add{% endif %} Stakeholder</h2>
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        {{ form.as_p }}
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{% url 'stakeholder-list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
+
+<!-- stakeholders/templates/stakeholders/stakeholder_confirm_delete.html -->
+{% extends 'stakeholders/base.html' %}
+
+{% block content %}
+<h2>Delete Stakeholder</h2>
+<p>Are you sure you want to delete "{{ object.name }}"?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+    <a href="{% url 'stakeholder-list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
