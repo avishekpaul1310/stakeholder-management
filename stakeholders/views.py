@@ -1,5 +1,5 @@
 # stakeholders/views.py
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from .models import Stakeholder
@@ -39,3 +39,19 @@ class StakeholderDeleteView(DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Stakeholder deleted successfully!')
         return super().delete(request, *args, **kwargs)
+    
+class StakeholderMapView(TemplateView):
+    template_name = 'stakeholders/stakeholder_map.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['stakeholders'] = Stakeholder.objects.all()
+        return context
+
+class StakeholderEngagementChartView(TemplateView):
+    template_name = 'stakeholders/stakeholder_engagement_chart.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['stakeholders'] = Stakeholder.objects.all()
+        return context
