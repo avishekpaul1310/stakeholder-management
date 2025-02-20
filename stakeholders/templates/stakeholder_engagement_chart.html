@@ -1,12 +1,68 @@
 {% extends 'stakeholders/base.html' %}
+{% load static %}
 
 {% block content %}
-<h2>Stakeholder Engagement Assessment Chart</h2>
-<div id="engagement-chart">
-    <!-- Visualization logic for the engagement assessment chart goes here -->
-    <!-- Example: Use a JavaScript library like Chart.js or D3.js to create the chart -->
+<div class="container mt-4">
+    <h2>Stakeholder Engagement Assessment</h2>
+    <div class="card">
+        <div class="card-body">
+            <canvas id="engagementChart" width="800" height="400"></canvas>
+        </div>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // JavaScript code to render the engagement assessment chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('engagementChart').getContext('2d');
+    
+    // Get stakeholder data from Django template
+    const stakeholders = JSON.parse('{{ stakeholders|safe|escapejs }}');
+
+    const barChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: stakeholders.map(s => s.name),
+            datasets: [
+                {
+                    label: 'Current Engagement',
+                    data: stakeholders.map(s => s.current),
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Desired Engagement',
+                    data: stakeholders.map(s => s.desired),
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5,
+                    title: {
+                        display: true,
+                        text: 'Engagement Level'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Current vs Desired Engagement Levels'
+                }
+            }
+        }
+    });
+});
 </script>
 {% endblock %}

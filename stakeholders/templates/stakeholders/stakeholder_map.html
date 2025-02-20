@@ -1,12 +1,86 @@
 {% extends 'stakeholders/base.html' %}
+{% load static %}
 
 {% block content %}
-<h2>Stakeholder Map (Power/Interest Grid)</h2>
-<div id="stakeholder-map">
-    <!-- Visualization logic for the power/interest grid goes here -->
-    <!-- Example: Use a JavaScript library like Chart.js or D3.js to create the grid -->
+<div class="container mt-4">
+    <h2>Stakeholder Power/Interest Grid</h2>
+    <div class="card">
+        <div class="card-body">
+            <canvas id="stakeholderMap" width="800" height="600"></canvas>
+        </div>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // JavaScript code to render the power/interest grid
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('stakeholderMap').getContext('2d');
+    
+    // Get stakeholder data from Django template
+    const stakeholders = JSON.parse('{{ stakeholders|safe|escapejs }}');
+
+    const scatterChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Stakeholders',
+                data: stakeholders.map(s => ({
+                    x: s.interest,
+                    y: s.power,
+                    label: s.name
+                })),
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                pointRadius: 8,
+                pointHoverRadius: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Interest'
+                    },
+                    min: 0,
+                    max: 10
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Power'
+                    },
+                    min: 0,
+                    max: 10
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const point = context.raw;
+                            return `${point.label} (Interest: ${point.x}, Power: ${point.y})`;
+                        }
+                    }
+                },
+                annotation: {
+                    annotations: {
+                        quadrantLines: {
+                            type: 'line',
+                            xMin: 5,
+                            xMax: 5,
+                            borderColor: 'rgba(0, 0, 0, 0.2)',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            label: {
+                                content: 'Medium Interest'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
 </script>
 {% endblock %}
