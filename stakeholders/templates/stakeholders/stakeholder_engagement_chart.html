@@ -1,24 +1,25 @@
 {% extends 'stakeholders/base.html' %}
 {% load static %}
+{% load stakeholder_extras %}
 
 {% block content %}
 <div class="container mt-4">
     <h2>Stakeholder Engagement Assessment</h2>
-    <div class="card">
+    <div class="card mb-4">
         <div class="card-body">
             <canvas id="engagementChart" width="800" height="400"></canvas>
         </div>
     </div>
 
-    <!-- Add a table below the chart for better data visibility -->
+    <!-- Table for data visibility -->
     <div class="table-responsive mt-4">
         <table class="table table-striped">
             <thead>
                 <tr>
                     <th>Stakeholder</th>
-                    <th>Current Engagement Level</th>
-                    <th>Desired Engagement Level</th>
-                    <th>Gap</th>
+                    <th>Current Engagement</th>
+                    <th>Desired Engagement</th>
+                    <th>Engagement Gap</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,7 +28,13 @@
                     <td>{{ stakeholder.name }}</td>
                     <td>{{ stakeholder.current_engagement_level }}</td>
                     <td>{{ stakeholder.desired_engagement_level }}</td>
-                    <td>{{ stakeholder.desired_engagement_level|subtract:stakeholder.current_engagement_level }}</td>
+                    <td>
+                        {% with gap=stakeholder.desired_engagement_level|subtract:stakeholder.current_engagement_level %}
+                        <span class="badge {% if gap > 0 %}bg-warning{% elif gap < 0 %}bg-danger{% else %}bg-success{% endif %}">
+                            {{ gap }}
+                        </span>
+                        {% endwith %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -35,15 +42,16 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('engagementChart').getContext('2d');
     
-    // Get stakeholder data
-    const stakeholders = JSON.parse('{{ stakeholders|safe|escapejs }}');
+    // Get stakeholder data from server-rendered JSON
+    const stakeholders = JSON.parse('{{ stakeholders_json|safe }}');
 
-    // Create the chart
+    console.log('Stakeholder data:', stakeholders); // Debug line
+
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -67,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             scales: {
                 y: {
                     beginAtZero: true,
