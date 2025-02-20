@@ -11,7 +11,6 @@
         </div>
     </div>
 
-    <!-- Table for data visibility -->
     <div class="table-responsive mt-4">
         <table class="table table-striped">
             <thead>
@@ -19,7 +18,7 @@
                     <th>Stakeholder</th>
                     <th>Current Engagement</th>
                     <th>Desired Engagement</th>
-                    <th>Engagement Gap</th>
+                    <th>Gap</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,11 +28,9 @@
                     <td>{{ stakeholder.current_engagement_level }}</td>
                     <td>{{ stakeholder.desired_engagement_level }}</td>
                     <td>
-                        {% with gap=stakeholder.desired_engagement_level|subtract:stakeholder.current_engagement_level %}
-                        <span class="badge {% if gap > 0 %}bg-warning{% elif gap < 0 %}bg-danger{% else %}bg-success{% endif %}">
-                            {{ gap }}
+                        <span class="badge {% if stakeholder.desired_engagement_level > stakeholder.current_engagement_level %}bg-warning{% else %}bg-success{% endif %}">
+                            {{ stakeholder.desired_engagement_level|subtract:stakeholder.current_engagement_level }}
                         </span>
-                        {% endwith %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -42,15 +39,11 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('engagementChart').getContext('2d');
-    
-    // Get stakeholder data from server-rendered JSON
     const stakeholders = JSON.parse('{{ stakeholders_json|safe }}');
-
-    console.log('Stakeholder data:', stakeholders); // Debug line
 
     new Chart(ctx, {
         type: 'bar',
@@ -75,7 +68,6 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             scales: {
                 y: {
                     beginAtZero: true,

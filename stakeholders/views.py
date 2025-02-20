@@ -4,6 +4,8 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from .models import Stakeholder
 from .forms import StakeholderForm
+import json
+from django.core.serializers.json import DjangoJSONEncoder
 
 class StakeholderListView(ListView):
     model = Stakeholder
@@ -45,7 +47,14 @@ class StakeholderMapView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['stakeholders'] = Stakeholder.objects.all()
+        stakeholders = Stakeholder.objects.all()
+        context['stakeholders'] = stakeholders
+        # Add this line to create JSON data for the chart
+        context['stakeholders_json'] = json.dumps(
+            [{'name': s.name, 'power': s.power, 'interest': s.interest} 
+             for s in stakeholders],
+            cls=DjangoJSONEncoder
+        )
         return context
 
 class StakeholderEngagementChartView(TemplateView):
@@ -53,5 +62,13 @@ class StakeholderEngagementChartView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['stakeholders'] = Stakeholder.objects.all()
+        stakeholders = Stakeholder.objects.all()
+        context['stakeholders'] = stakeholders
+        context['stakeholders_json'] = json.dumps(
+            [{'name': s.name, 
+              'current': s.current_engagement_level, 
+              'desired': s.desired_engagement_level} 
+             for s in stakeholders],
+            cls=DjangoJSONEncoder
+        )
         return context

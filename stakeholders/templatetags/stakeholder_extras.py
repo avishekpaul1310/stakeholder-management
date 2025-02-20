@@ -7,4 +7,4 @@ def subtract(value, arg):
     try:
         return value - arg
     except (TypeError, ValueError):
-        return ''
+        return 0
