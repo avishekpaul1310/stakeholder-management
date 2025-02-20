@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 class Stakeholder(models.Model):
     name = models.CharField(max_length=200)
@@ -19,3 +20,24 @@ class Stakeholder(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+class CustomUser(AbstractUser):
+    ADMIN = 'admin'
+    VIEWER = 'viewer'
+    
+    ROLE_CHOICES = [
+        (ADMIN, 'Admin'),
+        (VIEWER, 'Viewer'),
+    ]
+    
+    role = models.CharField(
+        max_length=10,
+        choices=ROLE_CHOICES,
+        default=VIEWER,
+    )
+
+    class Meta:
+        permissions = [
+            ("view_dashboard", "Can view dashboard"),
+            ("view_reports", "Can view reports"),
+        ]

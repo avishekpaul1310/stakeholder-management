@@ -6,9 +6,12 @@ from .models import Stakeholder
 from .forms import StakeholderForm
 import json
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import Q
+from django.db.models import Q, Avg, Count, F
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models.functions import Abs
+from .mixins import AdminRequiredMixin, ViewerPermissionMixin
 
-class StakeholderListView(ListView):
+class StakeholderListView(ViewerPermissionMixin, ListView):
     model = Stakeholder
     template_name = 'stakeholders/stakeholder_list.html'
     context_object_name = 'stakeholders'
@@ -41,7 +44,7 @@ class StakeholderListView(ListView):
         context['current_sort'] = self.request.GET.get('sort', 'name')
         return context
 
-class StakeholderCreateView(CreateView):
+class StakeholderCreateView(AdminRequiredMixin, CreateView):
     model = Stakeholder
     form_class = StakeholderForm
     template_name = 'stakeholders/stakeholder_form.html'
@@ -51,7 +54,7 @@ class StakeholderCreateView(CreateView):
         messages.success(self.request, 'Stakeholder created successfully!')
         return super().form_valid(form)
 
-class StakeholderUpdateView(UpdateView):
+class StakeholderUpdateView(AdminRequiredMixin, UpdateView):
     model = Stakeholder
     form_class = StakeholderForm
     template_name = 'stakeholders/stakeholder_form.html'
@@ -61,7 +64,7 @@ class StakeholderUpdateView(UpdateView):
         messages.success(self.request, 'Stakeholder updated successfully!')
         return super().form_valid(form)
 
-class StakeholderDeleteView(DeleteView):
+class StakeholderDeleteView(AdminRequiredMixin, DeleteView):
     model = Stakeholder
     template_name = 'stakeholders/stakeholder_confirm_delete.html'
     success_url = reverse_lazy('stakeholder-list')
@@ -70,7 +73,7 @@ class StakeholderDeleteView(DeleteView):
         messages.success(request, 'Stakeholder deleted successfully!')
         return super().delete(request, *args, **kwargs)
     
-class StakeholderMapView(TemplateView):
+class StakeholderMapView(ViewerPermissionMixin, TemplateView):
     template_name = 'stakeholders/stakeholder_map.html'
 
     def get_context_data(self, **kwargs):
@@ -85,7 +88,7 @@ class StakeholderMapView(TemplateView):
         )
         return context
 
-class StakeholderEngagementChartView(TemplateView):
+class StakeholderEngagementChartView(ViewerPermissionMixin, TemplateView):
     template_name = 'stakeholders/stakeholder_engagement_chart.html'
 
     def get_context_data(self, **kwargs):
@@ -99,4 +102,34 @@ class StakeholderEngagementChartView(TemplateView):
              for s in stakeholders],
             cls=DjangoJSONEncoder
         )
+        return context
+    
+class DashboardView(LoginRequiredMixin, TemplateView):
+    template_name = 'stakeholders/dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Total Stakeholders
+        context['total_stakeholders'] = Stakeholder.objects.count()
+        
+        # Key Players (Power >= 5 and Interest >= 5)
+        context['key_players'] = Stakeholder.objects.filter(
+            power__gte=5,
+            interest__gte=5
+        ).count()
+        
+        # Average Engagement Gap
+        context['avg_engagement_gap'] = Stakeholder.objects.annotate(
+            engagement_gap=Abs(F('desired_engagement_level') - F('current_engagement_level'))
+        ).aggregate(Avg('engagement_gap'))['engagement_gap__avg'] or 0
+        
+        # Stakeholders with significant gaps (gap > 1)
+        context['attention_needed'] = Stakeholder.objects.annotate(
+            gap=F('desired_engagement_level') - F('current_engagement_level')
+        ).filter(gap__gt=1).count()
+        
+        # Recent stakeholders
+        context['recent_stakeholders'] = Stakeholder.objects.order_by('-created_at')[:5]
+        
         return context

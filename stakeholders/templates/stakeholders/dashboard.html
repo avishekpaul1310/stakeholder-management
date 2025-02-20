@@ -1,0 +1,79 @@
+{% extends 'stakeholders/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Dashboard Overview</h2>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Stakeholders</h5>
+                    <h2 class="card-text">{{ total_stakeholders }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Key Players</h5>
+                    <h2 class="card-text">{{ key_players }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Avg. Engagement Gap</h5>
+                    <h2 class="card-text">{{ avg_engagement_gap|floatformat:1 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Need Attention</h5>
+                    <h2 class="card-text">{{ attention_needed }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Stakeholders -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recently Added Stakeholders</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Organization</th>
+                                    <th>Role</th>
+                                    <th>Added</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stakeholder in recent_stakeholders %}
+                                <tr>
+                                    <td>{{ stakeholder.name }}</td>
+                                    <td>{{ stakeholder.organization }}</td>
+                                    <td>{{ stakeholder.role }}</td>
+                                    <td>{{ stakeholder.created_at|date:"Y-m-d" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
