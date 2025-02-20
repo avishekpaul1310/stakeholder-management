@@ -5,6 +5,12 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Stakeholder Engagement Assessment</h2>
+    
+    <!-- Download Button -->
+    <button id="downloadChart" class="btn btn-primary mb-3">
+        <i class="fas fa-download"></i> Download Chart
+    </button>
+
     <div class="card mb-4">
         <div class="card-body">
             <canvas id="engagementChart" width="800" height="400"></canvas>
@@ -19,27 +25,63 @@
                     <th>Current Engagement</th>
                     <th>Desired Engagement</th>
                     <th>Gap</th>
+                    <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for stakeholder in stakeholders %}
+                {% with gap=stakeholder.desired_engagement_level|subtract:stakeholder.current_engagement_level %}
                 <tr>
                     <td>{{ stakeholder.name }}</td>
                     <td>{{ stakeholder.current_engagement_level }}</td>
                     <td>{{ stakeholder.desired_engagement_level }}</td>
                     <td>
-                        <span class="badge {% if stakeholder.desired_engagement_level > stakeholder.current_engagement_level %}bg-warning{% else %}bg-success{% endif %}">
-                            {{ stakeholder.desired_engagement_level|subtract:stakeholder.current_engagement_level }}
+                        <span class="badge {% if gap > 1 %}bg-danger{% elif gap > 0 %}bg-warning{% else %}bg-success{% endif %}">
+                            {{ gap }}
                         </span>
                     </td>
+                    <td>
+                        {% if gap > 1 %}
+                            <i class="fas fa-exclamation-triangle text-danger" title="Significant Gap"></i>
+                        {% elif gap > 0 %}
+                            <i class="fas fa-arrow-up text-warning" title="Minor Gap"></i>
+                        {% else %}
+                            <i class="fas fa-check text-success" title="On Target"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="showStakeholderDetails('{{ stakeholder.name }}', '{{ gap }}')">
+                            View Details
+                        </button>
+                    </td>
                 </tr>
+                {% endwith %}
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 
+<!-- Modal for Stakeholder Details -->
+<div class="modal fade" id="stakeholderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Stakeholder Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="stakeholderDetails"></div>
+                <div id="suggestedActions"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('engagementChart').getContext('2d');
@@ -89,6 +131,53 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // Download functionality
+    document.getElementById('downloadChart').addEventListener('click', function() {
+        const canvas = document.getElementById('engagementChart');
+        canvas.toBlob(function(blob) {
+            saveAs(blob, 'engagement-assessment.png');
+        });
+    });
 });
+
+function showStakeholderDetails(name, gap) {
+    const modal = new bootstrap.Modal(document.getElementById('stakeholderModal'));
+    const detailsDiv = document.getElementById('stakeholderDetails');
+    const actionsDiv = document.getElementById('suggestedActions');
+
+    detailsDiv.innerHTML = `<h6>${name}</h6>
+                           <p>Engagement Gap: ${gap}</p>`;
+
+    actionsDiv.innerHTML = `<h6>Suggested Actions:</h6>
+                           <ul>
+                           ${getSuggestedActions(gap).map(action => `<li>${action}</li>`).join('')}
+                           </ul>`;
+
+    modal.show();
+}
+
+function getSuggestedActions(gap) {
+    if (gap > 1) {
+        return [
+            'Schedule immediate engagement meeting',
+            'Develop detailed engagement plan',
+            'Set up regular check-ins',
+            'Document engagement activities'
+        ];
+    } else if (gap > 0) {
+        return [
+            'Review current engagement approach',
+            'Identify opportunities for increased involvement',
+            'Schedule follow-up meeting'
+        ];
+    } else {
+        return [
+            'Maintain current engagement level',
+            'Document successful engagement practices',
+            'Schedule periodic review'
+        ];
+    }
+}
 </script>
 {% endblock %}

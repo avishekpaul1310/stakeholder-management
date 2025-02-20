@@ -6,12 +6,40 @@ from .models import Stakeholder
 from .forms import StakeholderForm
 import json
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Q
 
 class StakeholderListView(ListView):
     model = Stakeholder
     template_name = 'stakeholders/stakeholder_list.html'
     context_object_name = 'stakeholders'
-    ordering = ['-created_at']
+    ordering = ['name']  # Default ordering
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('search', '')
+        role_filter = self.request.GET.get('role', '')
+        org_filter = self.request.GET.get('organization', '')
+        sort_by = self.request.GET.get('sort', 'name')
+
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(role__icontains=search_query) |
+                Q(organization__icontains=search_query)
+            )
+        if role_filter:
+            queryset = queryset.filter(role__iexact=role_filter)
+        if org_filter:
+            queryset = queryset.filter(organization__iexact=org_filter)
+        
+        return queryset.order_by(sort_by)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['roles'] = Stakeholder.objects.values_list('role', flat=True).distinct()
+        context['organizations'] = Stakeholder.objects.values_list('organization', flat=True).distinct()
+        context['current_sort'] = self.request.GET.get('sort', 'name')
+        return context
 
 class StakeholderCreateView(CreateView):
     model = Stakeholder

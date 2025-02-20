@@ -4,130 +4,156 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Stakeholder Power/Interest Grid</h2>
+    
+    <!-- Filter Controls -->
+    <div class="mb-3">
+        <label for="categoryFilter" class="form-label">Filter by Category:</label>
+        <select id="categoryFilter" class="form-select">
+            <option value="all">All Categories</option>
+            <option value="key-player">Key Players</option>
+            <option value="keep-satisfied">Keep Satisfied</option>
+            <option value="keep-informed">Keep Informed</option>
+            <option value="monitor">Monitor</option>
+        </select>
+    </div>
+
+    <!-- Download Button -->
+    <button id="downloadMap" class="btn btn-primary mb-3">
+        <i class="fas fa-download"></i> Download Map
+    </button>
+
     <div class="card">
         <div class="card-body">
             <canvas id="stakeholderMap" width="800" height="600"></canvas>
         </div>
     </div>
-
-    <!-- Add a table below the map for better data visibility -->
-    <div class="table-responsive mt-4">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Stakeholder</th>
-                    <th>Power</th>
-                    <th>Interest</th>
-                    <th>Category</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for stakeholder in stakeholders %}
-                <tr>
-                    <td>{{ stakeholder.name }}</td>
-                    <td>{{ stakeholder.power }}</td>
-                    <td>{{ stakeholder.interest }}</td>
-                    <td>
-                        {% if stakeholder.power >= 5 and stakeholder.interest >= 5 %}
-                            Key Player
-                        {% elif stakeholder.power >= 5 and stakeholder.interest < 5 %}
-                            Keep Satisfied
-                        {% elif stakeholder.power < 5 and stakeholder.interest >= 5 %}
-                            Keep Informed
-                        {% else %}
-                            Monitor
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('stakeholderMap').getContext('2d');
-    
-    // Get stakeholder data
     const stakeholders = JSON.parse('{{ stakeholders_json|safe }}');
+    let chart;
 
-    // Create scatter plot
-    new Chart(ctx, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: 'Stakeholders',
-                data: stakeholders.map(s => ({
-                    x: s.interest,
-                    y: s.power,
-                    stakeholderName: s.name
-                })),
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                pointRadius: 10,
-                pointHoverRadius: 12
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Interest'
-                    },
-                    min: 0,
-                    max: 10,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.1)',
-                        drawBorder: true
-                    }
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Power'
-                    },
-                    min: 0,
-                    max: 10,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.1)',
-                        drawBorder: true
-                    }
-                }
+    function createChart(filteredData = stakeholders) {
+        if (chart) {
+            chart.destroy();
+        }
+
+        chart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Stakeholders',
+                    data: filteredData.map(s => ({
+                        x: s.interest,
+                        y: s.power,
+                        stakeholderName: s.name,
+                        category: getCategory(s.power, s.interest)
+                    })),
+                    backgroundColor: filteredData.map(s => getCategoryColor(s.power, s.interest)),
+                    pointRadius: 10,
+                    pointHoverRadius: 12
+                }]
             },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const point = context.raw;
-                            return `${point.stakeholderName} (Interest: ${point.x}, Power: ${point.y})`;
-                        }
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Interest' },
+                        min: 0,
+                        max: 10,
+                    },
+                    y: {
+                        title: { display: true, text: 'Power' },
+                        min: 0,
+                        max: 10,
                     }
                 },
-                annotation: {
-                    annotations: {
-                        xLine: {
-                            type: 'line',
-                            yMin: 5,
-                            yMax: 5,
-                            borderColor: 'rgba(0, 0, 0, 0.2)',
-                            borderWidth: 1,
-                            borderDash: [5, 5]
-                        },
-                        yLine: {
-                            type: 'line',
-                            xMin: 5,
-                            xMax: 5,
-                            borderColor: 'rgba(0, 0, 0, 0.2)',
-                            borderWidth: 1,
-                            borderDash: [5, 5]
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const point = context.raw;
+                                return [
+                                    `${point.stakeholderName}`,
+                                    `Power: ${point.y}, Interest: ${point.x}`,
+                                    `Category: ${point.category}`
+                                ];
+                            }
                         }
                     }
                 }
             }
-        }
+        });
+
+        // Add colored quadrants
+        addQuadrants(ctx);
+    }
+
+    function getCategory(power, interest) {
+        if (power >= 5 && interest >= 5) return 'Key Player';
+        if (power >= 5) return 'Keep Satisfied';
+        if (interest >= 5) return 'Keep Informed';
+        return 'Monitor';
+    }
+
+    function getCategoryColor(power, interest) {
+        if (power >= 5 && interest >= 5) return 'rgba(255, 99, 132, 0.6)';  // Red
+        if (power >= 5) return 'rgba(54, 162, 235, 0.6)';                   // Blue
+        if (interest >= 5) return 'rgba(255, 206, 86, 0.6)';               // Yellow
+        return 'rgba(75, 192, 192, 0.6)';                                  // Green
+    }
+
+    function addQuadrants(ctx) {
+        const width = ctx.canvas.width;
+        const height = ctx.canvas.height;
+        const midX = width / 2;
+        const midY = height / 2;
+
+        // Add semi-transparent quadrant backgrounds
+        ctx.globalAlpha = 0.1;
+        
+        // Key Players (top-right)
+        ctx.fillStyle = 'rgba(255, 99, 132, 0.2)';
+        ctx.fillRect(midX, 0, midX, midY);
+        
+        // Keep Satisfied (top-left)
+        ctx.fillStyle = 'rgba(54, 162, 235, 0.2)';
+        ctx.fillRect(0, 0, midX, midY);
+        
+        // Keep Informed (bottom-right)
+        ctx.fillStyle = 'rgba(255, 206, 86, 0.2)';
+        ctx.fillRect(midX, midY, midX, midY);
+        
+        // Monitor (bottom-left)
+        ctx.fillStyle = 'rgba(75, 192, 192, 0.2)';
+        ctx.fillRect(0, midY, midX, midY);
+
+        ctx.globalAlpha = 1.0;
+    }
+
+    // Initialize chart
+    createChart();
+
+    // Filter functionality
+    document.getElementById('categoryFilter').addEventListener('change', function(e) {
+        const category = e.target.value;
+        const filteredData = category === 'all' 
+            ? stakeholders 
+            : stakeholders.filter(s => getCategory(s.power, s.interest).toLowerCase().replace(' ', '-') === category);
+        createChart(filteredData);
+    });
+
+    // Download functionality
+    document.getElementById('downloadMap').addEventListener('click', function() {
+        const canvas = document.getElementById('stakeholderMap');
+        canvas.toBlob(function(blob) {
+            saveAs(blob, 'stakeholder-map.png');
+        });
     });
 });
 </script>

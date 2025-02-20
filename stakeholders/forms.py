@@ -5,7 +5,7 @@ from .models import Stakeholder
 class StakeholderForm(forms.ModelForm):
     class Meta:
         model = Stakeholder
-        fields = ['name', 'email', 'role', 'organization', 'phone', 'notes', 'power', 'interest', 'current_engagement_level', 'desired_engagement_level']
+        fields = '__all__'
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
@@ -18,6 +18,14 @@ class StakeholderForm(forms.ModelForm):
             'current_engagement_level': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 5}),
             'desired_engagement_level': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 5}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Mark required fields
+        self.fields['name'].required = True
+        self.fields['email'].required = True
+        self.fields['role'].required = True
+        self.fields['organization'].required = True
 
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')
