@@ -1,25 +1,6 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
-
-class Stakeholder(models.Model):
-    name = models.CharField(max_length=200)
-    email = models.EmailField()
-    role = models.CharField(max_length=100)
-    organization = models.CharField(max_length=200)
-    phone = models.CharField(max_length=20, blank=True)
-    notes = models.TextField(blank=True)
-    power = models.IntegerField(default=0)  # 0 to 10 scale
-    interest = models.IntegerField(default=0)  # 0 to 10 scale
-    current_engagement_level = models.IntegerField(default=0)  # 0 to 5 scale
-    desired_engagement_level = models.IntegerField(default=0)  # 0 to 5 scale
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        ordering = ['-created_at']
+from django.db import models
+from django.utils import timezone
 
 class CustomUser(AbstractUser):
     ADMIN = 'admin'
@@ -35,9 +16,35 @@ class CustomUser(AbstractUser):
         choices=ROLE_CHOICES,
         default=VIEWER,
     )
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        permissions = [
-            ("view_dashboard", "Can view dashboard"),
-            ("view_reports", "Can view reports"),
-        ]
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+
+class Stakeholder(models.Model):
+    name = models.CharField(max_length=200)
+    organization = models.CharField(max_length=200)
+    role = models.CharField(max_length=200)
+    email = models.EmailField()
+    power = models.IntegerField(
+        choices=[(i, str(i)) for i in range(1, 11)],
+        help_text="Rate from 1-10"
+    )
+    interest = models.IntegerField(
+        choices=[(i, str(i)) for i in range(1, 11)],
+        help_text="Rate from 1-10"
+    )
+    current_engagement_level = models.IntegerField(
+        choices=[(i, str(i)) for i in range(1, 6)],
+        help_text="Rate from 1-5"
+    )
+    desired_engagement_level = models.IntegerField(
+        choices=[(i, str(i)) for i in range(1, 6)],
+        help_text="Rate from 1-5"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
