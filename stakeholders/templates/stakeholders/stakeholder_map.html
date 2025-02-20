@@ -9,6 +9,40 @@
             <canvas id="stakeholderMap" width="800" height="600"></canvas>
         </div>
     </div>
+
+    <!-- Add a table below the map for better data visibility -->
+    <div class="table-responsive mt-4">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Stakeholder</th>
+                    <th>Power</th>
+                    <th>Interest</th>
+                    <th>Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stakeholder in stakeholders %}
+                <tr>
+                    <td>{{ stakeholder.name }}</td>
+                    <td>{{ stakeholder.power }}</td>
+                    <td>{{ stakeholder.interest }}</td>
+                    <td>
+                        {% if stakeholder.power >= 5 and stakeholder.interest >= 5 %}
+                            Key Player
+                        {% elif stakeholder.power >= 5 and stakeholder.interest < 5 %}
+                            Keep Satisfied
+                        {% elif stakeholder.power < 5 and stakeholder.interest >= 5 %}
+                            Keep Informed
+                        {% else %}
+                            Monitor
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,10 +50,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('stakeholderMap').getContext('2d');
     
-    // Get stakeholder data from Django template
-    const stakeholders = JSON.parse('{{ stakeholders|safe|escapejs }}');
+    // Get stakeholder data
+    const stakeholders = JSON.parse('{{ stakeholders_json|safe }}');
 
-    const scatterChart = new Chart(ctx, {
+    // Create scatter plot
+    new Chart(ctx, {
         type: 'scatter',
         data: {
             datasets: [{
@@ -27,11 +62,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 data: stakeholders.map(s => ({
                     x: s.interest,
                     y: s.power,
-                    label: s.name
+                    stakeholderName: s.name
                 })),
                 backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                pointRadius: 8,
-                pointHoverRadius: 10
+                pointRadius: 10,
+                pointHoverRadius: 12
             }]
         },
         options: {
@@ -43,7 +78,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         text: 'Interest'
                     },
                     min: 0,
-                    max: 10
+                    max: 10,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)',
+                        drawBorder: true
+                    }
                 },
                 y: {
                     title: {
@@ -51,7 +90,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         text: 'Power'
                     },
                     min: 0,
-                    max: 10
+                    max: 10,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)',
+                        drawBorder: true
+                    }
                 }
             },
             plugins: {
@@ -59,22 +102,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     callbacks: {
                         label: function(context) {
                             const point = context.raw;
-                            return `${point.label} (Interest: ${point.x}, Power: ${point.y})`;
+                            return `${point.stakeholderName} (Interest: ${point.x}, Power: ${point.y})`;
                         }
                     }
                 },
                 annotation: {
                     annotations: {
-                        quadrantLines: {
+                        xLine: {
+                            type: 'line',
+                            yMin: 5,
+                            yMax: 5,
+                            borderColor: 'rgba(0, 0, 0, 0.2)',
+                            borderWidth: 1,
+                            borderDash: [5, 5]
+                        },
+                        yLine: {
                             type: 'line',
                             xMin: 5,
                             xMax: 5,
                             borderColor: 'rgba(0, 0, 0, 0.2)',
                             borderWidth: 1,
-                            borderDash: [5, 5],
-                            label: {
-                                content: 'Medium Interest'
-                            }
+                            borderDash: [5, 5]
                         }
                     }
                 }
