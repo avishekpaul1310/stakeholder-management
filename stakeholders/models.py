@@ -1,3 +1,5 @@
+# stakeholders/models.py
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -30,6 +32,7 @@ class Stakeholder(models.Model):
     influence_level = models.CharField(max_length=10, choices=INFLUENCE_CHOICES, default='Medium')
     interest_level = models.CharField(max_length=10, choices=INTEREST_CHOICES, default='Medium')
     engagement_strategy = models.CharField(max_length=20, choices=ENGAGEMENT_CHOICES, default='Inform')
+    desired_engagement = models.CharField(max_length=20, choices=ENGAGEMENT_CHOICES, default='Inform')
     notes = models.TextField(blank=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stakeholders')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -60,27 +63,26 @@ class Stakeholder(models.Model):
     
     def get_influence_value(self):
         influence_values = {
-            'Low': 1,
-            'Medium': 2,
-            'High': 3
+            'Low': 25,
+            'Medium': 50,
+            'High': 75
         }
-        return influence_values.get(self.influence_level, 1)
+        return influence_values.get(self.influence_level, 50)
 
     def get_interest_value(self):
         interest_values = {
-            'Low': 1,
-            'Medium': 2,
-            'High': 3
+            'Low': 25,
+            'Medium': 50,
+            'High': 75
         }
-        return interest_values.get(self.interest_level, 1)
+        return interest_values.get(self.interest_level, 50)
     
-class Engagement(models.Model):
-    stakeholder = models.ForeignKey(Stakeholder, on_delete=models.CASCADE, related_name='engagements')
-    date = models.DateField()
-    description = models.TextField()
-    outcome = models.TextField(blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recorded_engagements')
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return f"Engagement with {self.stakeholder.name} on {self.date}"
+    def get_quadrant(self):
+        if self.get_influence_value() >= 50 and self.get_interest_value() >= 50:
+            return "Manage Closely"
+        elif self.get_influence_value() >= 50 and self.get_interest_value() < 50:
+            return "Keep Satisfied"
+        elif self.get_influence_value() < 50 and self.get_interest_value() >= 50:
+            return "Keep Informed"
+        else:
+            return "Monitor"

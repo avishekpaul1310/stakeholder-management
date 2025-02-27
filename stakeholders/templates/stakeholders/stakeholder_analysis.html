@@ -3,158 +3,255 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Stakeholder Analysis</h2>
-    
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h4>Power/Interest Grid</h4>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Stakeholder Engagement Assessment</h2>
+            <p class="text-muted">Analyze the gap between current and desired engagement levels</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'stakeholder_mapping' %}" class="btn btn-outline-primary">
+                <i class="bi bi-grid"></i> Power/Interest Grid
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-light">
+                    <h5 class="m-0 font-weight-bold">Current vs. Desired Engagement</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="powerInterestGrid"></canvas>
+                    <div style="height: 500px;">
+                        <canvas id="engagementChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h4>Engagement Assessment</h4>
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-light">
+                    <h5 class="m-0 font-weight-bold">Engagement Levels</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="engagementChart"></canvas>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Level</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-secondary">1. Inform</span></td>
+                                    <td>Provide information to stakeholders to help them understand issues, options, and solutions.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-info">2. Consult</span></td>
+                                    <td>Obtain feedback on analysis, options, and/or decisions.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-primary">3. Involve</span></td>
+                                    <td>Work directly with stakeholders to ensure their concerns are understood and considered.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning text-dark">4. Collaborate</span></td>
+                                    <td>Partner with stakeholders in each aspect of the decision, including development of alternatives and identification of solutions.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-success">5. Empower</span></td>
+                                    <td>Place final decision-making authority in the hands of stakeholders.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-light">
+                    <h5 class="m-0 font-weight-bold">Engagement Strategies</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Stakeholder</th>
+                                    <th>Current Engagement</th>
+                                    <th>Desired Engagement</th>
+                                    <th>Gap</th>
+                                    <th>Recommended Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="strategyTableBody">
+                                <!-- This will be populated with JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Fetch stakeholder data
     fetch('{% url "get_stakeholder_data" %}')
         .then(response => response.json())
         .then(data => {
-            createPowerInterestGrid(data.stakeholders);
             createEngagementChart(data.stakeholders);
+            populateStrategyTable(data.stakeholders);
+        })
+        .catch(error => {
+            console.error('Error fetching stakeholder data:', error);
         });
-});
 
-function createPowerInterestGrid(stakeholders) {
-    const ctx = document.getElementById('powerInterestGrid').getContext('2d');
+    // Mapping between numeric engagement levels and text labels
+    const engagementLabels = {
+        1: 'Inform',
+        2: 'Consult',
+        3: 'Involve',
+        4: 'Collaborate',
+        5: 'Empower'
+    };
     
-    new Chart(ctx, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: 'Stakeholders',
-                data: stakeholders.map(s => ({
-                    x: s.interest,
-                    y: s.influence,
-                    label: s.name
-                })),
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Interest Level'
+    function createEngagementChart(stakeholders) {
+        const ctx = document.getElementById('engagementChart').getContext('2d');
+        
+        // Sort stakeholders by engagement gap (largest to smallest)
+        stakeholders.sort((a, b) => {
+            const gapA = Math.abs(a.desired_engagement - a.current_engagement);
+            const gapB = Math.abs(b.desired_engagement - b.current_engagement);
+            return gapB - gapA;
+        });
+        
+        // Take only the top 10 stakeholders if there are more
+        const topStakeholders = stakeholders.slice(0, 10);
+        
+        // Prepare data for the chart
+        const labels = topStakeholders.map(s => s.name);
+        const currentData = topStakeholders.map(s => s.current_engagement);
+        const desiredData = topStakeholders.map(s => s.desired_engagement);
+        
+        const engagementChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Current Engagement',
+                        data: currentData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
                     },
-                    min: 0,
-                    max: 4,
-                    ticks: {
-                        stepSize: 1,
-                        callback: function(value) {
-                            return ['', 'Low', 'Medium', 'High'][value];
-                        }
+                    {
+                        label: 'Desired Engagement',
+                        data: desiredData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
                     }
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Power/Influence Level'
-                    },
-                    min: 0,
-                    max: 4,
-                    ticks: {
-                        stepSize: 1,
-                        callback: function(value) {
-                            return ['', 'Low', 'Medium', 'High'][value];
-                        }
-                    }
-                }
+                ]
             },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.raw.label;
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        min: 0,
+                        max: 6,
+                        title: {
+                            display: true,
+                            text: 'Engagement Level'
+                        },
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                return value > 0 ? engagementLabels[value] : '';
+                            }
                         }
                     }
-                }
-            }
-        }
-    });
-}
-
-function createEngagementChart(stakeholders) {
-    const ctx = document.getElementById('engagementChart').getContext('2d');
-    
-    const labels = stakeholders.map(s => s.name);
-    const currentEngagement = stakeholders.map(s => s.current_engagement);
-    const desiredEngagement = stakeholders.map(s => s.desired_engagement);
-    
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Current Engagement',
-                    data: currentEngagement,
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
                 },
-                {
-                    label: 'Desired Engagement',
-                    data: desiredEngagement,
-                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Engagement Level'
-                    },
-                    min: 0,
-                    max: 6,
-                    ticks: {
-                        stepSize: 1,
-                        callback: function(value) {
-                            return ['', 'Inform', 'Consult', 'Involve', 'Collaborate', 'Empower'][value];
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const level = context.raw;
+                                return `${context.dataset.label}: ${level} - ${engagementLabels[level]}`;
+                            }
                         }
+                    },
+                    legend: {
+                        position: 'top'
                     }
                 }
             }
-        }
-    });
-}
+        });
+    }
+    
+    function populateStrategyTable(stakeholders) {
+        const tableBody = document.getElementById('strategyTableBody');
+        
+        // Sort stakeholders by engagement gap (largest to smallest)
+        stakeholders.sort((a, b) => {
+            const gapA = Math.abs(a.desired_engagement - a.current_engagement);
+            const gapB = Math.abs(b.desired_engagement - b.current_engagement);
+            return gapB - gapA;
+        });
+        
+        stakeholders.forEach(stakeholder => {
+            const row = document.createElement('tr');
+            
+            // Calculate gap and determine badge class
+            const gap = stakeholder.desired_engagement - stakeholder.current_engagement;
+            let gapClass = '';
+            let gapText = '';
+            
+            if (gap > 0) {
+                gapClass = 'bg-danger';
+                gapText = `+${gap}`;
+            } else if (gap < 0) {
+                gapClass = 'bg-warning text-dark';
+                gapText = gap;
+            } else {
+                gapClass = 'bg-success';
+                gapText = 'No Gap';
+            }
+            
+            // Determine recommended action based on gap
+            let recommendedAction = '';
+            if (gap > 0) {
+                recommendedAction = `Increase engagement from "${engagementLabels[stakeholder.current_engagement]}" to "${engagementLabels[stakeholder.desired_engagement]}"`;
+            } else if (gap < 0) {
+                recommendedAction = `Consider reducing engagement from "${engagementLabels[stakeholder.current_engagement]}" to "${engagementLabels[stakeholder.desired_engagement]}"`;
+            } else {
+                recommendedAction = 'Maintain current engagement level';
+            }
+            
+            // Create table row content
+            row.innerHTML = `
+                <td><a href="/stakeholders/${stakeholder.id}/detail/">${stakeholder.name}</a></td>
+                <td><span class="badge bg-primary">${stakeholder.current_engagement} - ${engagementLabels[stakeholder.current_engagement]}</span></td>
+                <td><span class="badge bg-danger">${stakeholder.desired_engagement} - ${engagementLabels[stakeholder.desired_engagement]}</span></td>
+                <td><span class="badge ${gapClass}">${gapText}</span></td>
+                <td>${recommendedAction}</td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+    }
+});
 </script>
-{% endblock %}
 {% endblock %}

@@ -63,7 +63,19 @@
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-4 text-muted">Engagement Strategy:</div>
+                    <div class="col-md-4 text-muted">Interest Level:</div>
+                    <div class="col-md-8">
+                        {% if stakeholder.interest_level == 'High' %}
+                        <span class="badge bg-danger">{{ stakeholder.interest_level }}</span>
+                        {% elif stakeholder.interest_level == 'Medium' %}
+                        <span class="badge bg-warning">{{ stakeholder.interest_level }}</span>
+                        {% else %}
+                        <span class="badge bg-info">{{ stakeholder.interest_level }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Current Engagement:</div>
                     <div class="col-md-8">
                         {% if stakeholder.engagement_strategy == 'Empower' %}
                         <span class="badge bg-success">{{ stakeholder.engagement_strategy }}</span>
@@ -79,6 +91,22 @@
                     </div>
                 </div>
                 <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Desired Engagement:</div>
+                    <div class="col-md-8">
+                        {% if stakeholder.desired_engagement == 'Empower' %}
+                        <span class="badge bg-success">{{ stakeholder.desired_engagement }}</span>
+                        {% elif stakeholder.desired_engagement == 'Collaborate' %}
+                        <span class="badge bg-primary">{{ stakeholder.desired_engagement }}</span>
+                        {% elif stakeholder.desired_engagement == 'Involve' %}
+                        <span class="badge bg-info">{{ stakeholder.desired_engagement }}</span>
+                        {% elif stakeholder.desired_engagement == 'Consult' %}
+                        <span class="badge bg-warning">{{ stakeholder.desired_engagement }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ stakeholder.desired_engagement }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
                     <div class="col-md-4 text-muted">Created:</div>
                     <div class="col-md-8">{{ stakeholder.created_at|date:"F j, Y" }}</div>
                 </div>
@@ -86,9 +114,9 @@
         </div>
     </div>
 
-    <!-- Notes -->
+    <!-- Notes and Analysis -->
     <div class="col-md-6 mb-4">
-        <div class="card shadow h-100">
+        <div class="card shadow mb-4">
             <div class="card-header py-3 bg-light">
                 <h6 class="m-0 font-weight-bold">Notes</h6>
             </div>
@@ -98,6 +126,40 @@
                 {% else %}
                 <p class="text-muted">No notes for this stakeholder.</p>
                 {% endif %}
+            </div>
+        </div>
+        
+        <div class="card shadow">
+            <div class="card-header py-3 bg-light">
+                <h6 class="m-0 font-weight-bold">Stakeholder Analysis</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Power/Interest Quadrant:</div>
+                    <div class="col-md-8">
+                        <span class="badge bg-primary">{{ stakeholder.get_quadrant }}</span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Engagement Gap:</div>
+                    <div class="col-md-8">
+                        {% with gap=stakeholder.get_desired_engagement_level_value|add:"-"|add:stakeholder.get_engagement_level_value|stringformat:"s" %}
+                            {% if "+" in gap %}
+                            <span class="badge bg-danger">{{ gap }}</span>
+                            {% elif "-" in gap %}
+                            <span class="badge bg-warning text-dark">{{ gap }}</span>
+                            {% else %}
+                            <span class="badge bg-success">No Gap</span>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <a href="{% url 'stakeholder_mapping' %}" class="btn btn-sm btn-outline-primary">View in Grid</a>
+                        <a href="{% url 'stakeholder_analysis' %}" class="btn btn-sm btn-outline-info">View in Engagement Chart</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
