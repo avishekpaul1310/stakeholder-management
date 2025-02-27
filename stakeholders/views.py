@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Count
+from django.db.models import Count, Case, When, IntegerField, Value
 from .models import Stakeholder, Engagement
 from .forms import StakeholderForm, EngagementForm
+from django.http import JsonResponse
 
 @login_required
 def dashboard(request):
@@ -95,3 +96,16 @@ def engagement_create(request, stakeholder_id=None):
         form.fields['stakeholder'].queryset = Stakeholder.objects.filter(created_by=request.user)
     
     return render(request, 'stakeholders/engagement_form.html', {'form': form})
+
+@login_required
+def stakeholder_mapping(request):
+    stakeholders = Stakeholder.objects.filter(created_by=request.user)
+    return render(request, 'stakeholders/stakeholder_mapping.html', {'stakeholders': stakeholders})
+
+# Add this function to provide data for the grid via AJAX (optional)
+@login_required
+def stakeholder_grid_data(request):
+    stakeholders = Stakeholder.objects.filter(created_by=request.user).values(
+        'id', 'name', 'role', 'organization', 'influence_level', 'interest_level'
+    )
+    return JsonResponse(list(stakeholders), safe=False)

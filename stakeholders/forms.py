@@ -5,7 +5,7 @@ class StakeholderForm(forms.ModelForm):
     class Meta:
         model = Stakeholder
         fields = ['name', 'role', 'organization', 'email', 'phone', 
-                  'influence_level', 'engagement_strategy', 'notes']
+                  'influence_level', 'interest_level', 'engagement_strategy', 'notes']
         widgets = {
             'notes': forms.Textarea(attrs={'rows': 4}),
         }

@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Stakeholder Power/Interest Grid</h2>
+        <p class="text-muted">Map stakeholders based on their influence and interest levels</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'stakeholder_list' %}" class="btn btn-outline-primary">
+            <i class="bi bi-list"></i> Stakeholder List
+        </a>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 bg-light">
+        <h6 class="m-0 font-weight-bold">Power/Interest Grid</h6>
+    </div>
+    <div class="card-body">
+        <div class="grid-container" style="height: 600px; position: relative;">
+            <canvas id="powerInterestGrid"></canvas>
+        </div>
+        <div class="mt-4">
+            <h5>Grid Quadrants:</h5>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>High Power, Low Interest</h6>
+                            <p class="text-muted small">Keep Satisfied</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>High Power, High Interest</h6>
+                            <p class="text-muted small">Manage Closely</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>Low Power, Low Interest</h6>
+                            <p class="text-muted small">Monitor</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>Low Power, High Interest</h6>
+                            <p class="text-muted small">Keep Informed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stakeholder Details Modal -->
+<div class="modal fade" id="stakeholderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stakeholderModalLabel">Stakeholder Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="stakeholderDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" id="viewStakeholderLink" class="btn btn-primary">View Full Details</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Prepare the data for the grid
+    const stakeholders = JSON.parse('{{ stakeholders_json|escapejs }}');
+    
+    // Map text values to numerical values for plotting
+    const mapLevel = (level) => {
+        switch(level) {
+            case 'Low': return 25;
+            case 'Medium': return 50;
+            case 'High': return 75;
+            default: return 50;
+        }
+    };
+    
+    // Add some jitter to prevent overlapping points
+    const addJitter = () => (Math.random() * 10) - 5;
+    
+    // Format data for the chart
+    const gridData = stakeholders.map(s => ({
+        x: mapLevel(s.interest) + addJitter(),
+        y: mapLevel(s.influence) + addJitter(),
+        stakeholder: s
+    }));
+    
+    // Create the power/interest grid
+    const ctx = document.getElementById('powerInterestGrid').getContext('2d');
+    const grid = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Stakeholders',
+                data: gridData,
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                pointRadius: 10,
+                pointHoverRadius: 12
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    min: 0,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Interest Level'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            if (value === 25) return 'Low';
+                            if (value === 50) return 'Medium';
+                            if (value === 75) return 'High';
+                            return '';
+                        }
+                    }
+                },
+                y: {
+                    min: 0,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Power/Influence Level'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            if (value === 25) return 'Low';
+                            if (value === 50) return 'Medium';
+                            if (value === 75) return 'High';
+                            return '';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const s = context.raw.stakeholder;
+                            return [`Name: ${s.name}`, `Role: ${s.role}`, `Organization: ${s.organization || 'N/A'}`];
+                        }
+                    }
+                },
+                annotation: {
+                    annotations: {
+                        xLine: {
+                            type: 'line',
+                            yMin: 50,
+                            yMax: 50,
+                            borderColor: 'rgba(0, 0, 0, 0.3)',
+                            borderWidth: 1,
+                            borderDash: [6, 6]
+                        },
+                        yLine: {
+                            type: 'line',
+                            xMin: 50,
+                            xMax: 50,
+                            borderColor: 'rgba(0, 0, 0, 0.3)',
+                            borderWidth: 1,
+                            borderDash: [6, 6]
+                        },
+                        q1Label: {
+                            type: 'label',
+                            content: 'Keep Satisfied',
+                            position: {
+                                x: 25,
+                                y: 75
+                            },
+                            font: {
+                                size: 12
+                            },
+                            color: 'rgba(0, 0, 0, 0.5)'
+                        },
+                        q2Label: {
+                            type: 'label',
+                            content: 'Manage Closely',
+                            position: {
+                                x: 75,
+                                y: 75
+                            },
+                            font: {
+                                size: 12
+                            },
+                            color: 'rgba(0, 0, 0, 0.5)'
+                        },
+                        q3Label: {
+                            type: 'label',
+                            content: 'Monitor',
+                            position: {
+                                x: 25,
+                                y: 25
+                            },
+                            font: {
+                                size: 12
+                            },
+                            color: 'rgba(0, 0, 0, 0.5)'
+                        },
+                        q4Label: {
+                            type: 'label',
+                            content: 'Keep Informed',
+                            position: {
+                                x: 75,
+                                y: 25
+                            },
+                            font: {
+                                size: 12
+                            },
+                            color: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            },
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const stakeholder = gridData[index].stakeholder;
+                    showStakeholderDetails(stakeholder);
+                }
+            }
+        }
+    });
+    
+    // Function to show stakeholder details in modal
+    function showStakeholderDetails(stakeholder) {
+        const detailsDiv = document.getElementById('stakeholderDetails');
+        
+        // Format details
+        let detailsHTML = `
+            <dl class="row">
+                <dt class="col-sm-4">Name:</dt>
+                <dd class="col-sm-8">${stakeholder.name}</dd>
+                <dt class="col-sm-4">Role:</dt>
+                <dd class="col-sm-8">${stakeholder.role}</dd>
+                <dt class="col-sm-4">Organization:</dt>
+                <dd class="col-sm-8">${stakeholder.organization || 'N/A'}</dd>
+                <dt class="col-sm-4">Influence Level:</dt>
+                <dd class="col-sm-8">${stakeholder.influence}</dd>
+                <dt class="col-sm-4">Interest Level:</dt>
+                <dd class="col-sm-8">${stakeholder.interest}</dd>
+            </dl>
+        `;
+        
+        detailsDiv.innerHTML = detailsHTML;
+        document.getElementById('viewStakeholderLink').href = `/stakeholders/${stakeholder.id}/detail/`;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('stakeholderModal'));
+        modal.show();
+    }
+});
+</script>
+{% endblock %}

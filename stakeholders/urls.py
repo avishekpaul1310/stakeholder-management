@@ -10,4 +10,6 @@ urlpatterns = [
     path('<int:pk>/detail/', views.stakeholder_detail, name='stakeholder_detail'),
     path('engagement/create/', views.engagement_create, name='engagement_create'),
     path('<int:stakeholder_id>/engagement/create/', views.engagement_create, name='stakeholder_engagement_create'),
+    path('mapping/', views.stakeholder_mapping, name='stakeholder_mapping'),
+    path('api/grid-data/', views.stakeholder_grid_data, name='stakeholder_grid_data'),
 ]
