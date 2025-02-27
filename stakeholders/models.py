@@ -86,3 +86,14 @@ class Stakeholder(models.Model):
             return "Keep Informed"
         else:
             return "Monitor"
+    
+class Engagement(models.Model):
+    stakeholder = models.ForeignKey(Stakeholder, on_delete=models.CASCADE, related_name='engagements')
+    date = models.DateField()
+    description = models.TextField()
+    outcome = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recorded_engagements')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Engagement with {self.stakeholder.name} on {self.date}"
