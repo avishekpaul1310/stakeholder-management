@@ -21,8 +21,12 @@
     <div class="row">
         <div class="col-md-12">
             <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-light">
+                <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
                     <h5 class="m-0 font-weight-bold">Power/Interest Grid</h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showLabelsSwitch" checked>
+                        <label class="form-check-label" for="showLabelsSwitch">Show Labels</label>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div id="grid-container" style="position: relative; height: 600px; border: 1px solid #eee;">
@@ -133,6 +137,21 @@
         </div>
     </div>
 </div>
+
+<style>
+/* Custom styles for stakeholder labels */
+.stakeholder-label {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    border: 1px solid #ccc;
+    pointer-events: none;
+    z-index: 10;
+    white-space: nowrap;
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -148,79 +167,129 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error fetching stakeholder data:', error);
         });
 
+    // Toggle for showing/hiding labels
+    const showLabelsSwitch = document.getElementById('showLabelsSwitch');
+    showLabelsSwitch.addEventListener('change', function() {
+        // Toggle the datalabels plugin
+        window.stakeholderChart.options.plugins.datalabels.display = this.checked;
+        window.stakeholderChart.update();
+    });
+
     function createStakeholderGrid(stakeholders) {
         const ctx = document.getElementById('stakeholderGrid').getContext('2d');
         
         // Add some jitter to prevent exact overlaps
-        const jitter = () => (Math.random() - 0.5) * 5;
+        const jitter = () => (Math.random() - 0.5) * 3;
         
         // Prepare data for the chart
         const gridData = stakeholders.map(s => ({
             x: s.interest + jitter(),
             y: s.influence + jitter(),
             name: s.name,
-            stakeholderId: s.id
+            id: s.id,
+            role: s.role
         }));
         
-        const stakeholderGrid = new Chart(ctx, {
-            type: 'scatter',
-            data: {
-                datasets: [{
-                    label: 'Stakeholders',
-                    data: gridData,
-                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1,
-                    pointRadius: 8,
-                    pointHoverRadius: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        min: 0,
-                        max: 100,
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            display: false
-                        }
-                    },
-                    y: {
-                        min: 0,
-                        max: 100,
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            display: false
-                        }
-                    }
+        // Dynamically load Chart.js Datalabels plugin
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0';
+        script.async = true;
+        
+        script.onload = function() {
+            // Register the plugin
+            Chart.register(ChartDataLabels);
+            
+            // Create the chart with labels
+            const stakeholderGrid = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Stakeholders',
+                        data: gridData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        pointRadius: 8,
+                        pointHoverRadius: 12
+                    }]
                 },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.raw.name;
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                display: false
                             }
                         }
                     },
-                    legend: {
-                        display: false
-                    }
-                },
-                onClick: function(event, elements) {
-                    if (elements.length > 0) {
-                        const index = elements[0].index;
-                        const stakeholder = gridData[index];
-                        showStakeholderDetails(stakeholder.stakeholderId);
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const s = context.raw;
+                                    return [`${s.name}`, `Role: ${s.role}`];
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        },
+                        // Configure the datalabels plugin
+                        datalabels: {
+                            display: true,
+                            align: 'top',
+                            offset: 10,
+                            formatter: function(value) {
+                                return value.name;
+                            },
+                            color: '#333',
+                            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                            borderRadius: 3,
+                            padding: {
+                                top: 2,
+                                bottom: 2,
+                                left: 4,
+                                right: 4
+                            },
+                            font: {
+                                size: 11,
+                                weight: 'bold'
+                            },
+                            clamp: true,
+                            // Handle potential label overlaps
+                            overlap: false
+                        }
+                    },
+                    onClick: function(event, elements) {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const stakeholder = gridData[index];
+                            showStakeholderDetails(stakeholder.id);
+                        }
                     }
                 }
-            }
-        });
+            });
+            
+            window.stakeholderChart = stakeholderGrid;
+        };
+        
+        document.head.appendChild(script);
     }
 
     function showStakeholderDetails(stakeholderId) {
