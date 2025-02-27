@@ -135,3 +135,24 @@ def stakeholder_grid_data(request):
         'id', 'name', 'role', 'organization', 'influence_level', 'interest_level'
     )
     return JsonResponse(list(stakeholders), safe=False)
+
+@login_required
+def stakeholder_analysis(request):
+    stakeholders = Stakeholder.objects.filter(created_by=request.user)
+    return render(request, 'stakeholders/stakeholder_analysis.html', {'stakeholders': stakeholders})
+
+@login_required
+def get_stakeholder_data(request):
+    stakeholders = Stakeholder.objects.filter(created_by=request.user)
+    
+    stakeholder_data = []
+    for stakeholder in stakeholders:
+        stakeholder_data.append({
+            'name': stakeholder.name,
+            'influence': stakeholder.get_influence_value(),
+            'interest': stakeholder.get_interest_value(),
+            'current_engagement': stakeholder.get_engagement_level_value(),
+            'desired_engagement': stakeholder.get_desired_engagement_level_value()
+        })
+    
+    return JsonResponse({'stakeholders': stakeholder_data})

@@ -12,4 +12,6 @@ urlpatterns = [
     path('<int:stakeholder_id>/engagement/create/', views.engagement_create, name='stakeholder_engagement_create'),
     path('mapping/', views.stakeholder_mapping, name='stakeholder_mapping'),
     path('api/grid-data/', views.stakeholder_grid_data, name='stakeholder_grid_data'),
+    path('analysis/', views.stakeholder_analysis, name='stakeholder_analysis'),
+    path('api/stakeholder-data/', views.get_stakeholder_data, name='get_stakeholder_data'),
 ]

@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Stakeholder Analysis</h2>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Power/Interest Grid</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="powerInterestGrid"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Engagement Assessment</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="engagementChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch stakeholder data
+    fetch('{% url "get_stakeholder_data" %}')
+        .then(response => response.json())
+        .then(data => {
+            createPowerInterestGrid(data.stakeholders);
+            createEngagementChart(data.stakeholders);
+        });
+});
+
+function createPowerInterestGrid(stakeholders) {
+    const ctx = document.getElementById('powerInterestGrid').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Stakeholders',
+                data: stakeholders.map(s => ({
+                    x: s.interest,
+                    y: s.influence,
+                    label: s.name
+                })),
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Interest Level'
+                    },
+                    min: 0,
+                    max: 4,
+                    ticks: {
+                        stepSize: 1,
+                        callback: function(value) {
+                            return ['', 'Low', 'Medium', 'High'][value];
+                        }
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Power/Influence Level'
+                    },
+                    min: 0,
+                    max: 4,
+                    ticks: {
+                        stepSize: 1,
+                        callback: function(value) {
+                            return ['', 'Low', 'Medium', 'High'][value];
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw.label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createEngagementChart(stakeholders) {
+    const ctx = document.getElementById('engagementChart').getContext('2d');
+    
+    const labels = stakeholders.map(s => s.name);
+    const currentEngagement = stakeholders.map(s => s.current_engagement);
+    const desiredEngagement = stakeholders.map(s => s.desired_engagement);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Current Engagement',
+                    data: currentEngagement,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Desired Engagement',
+                    data: desiredEngagement,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Engagement Level'
+                    },
+                    min: 0,
+                    max: 6,
+                    ticks: {
+                        stepSize: 1,
+                        callback: function(value) {
+                            return ['', 'Inform', 'Consult', 'Involve', 'Collaborate', 'Empower'][value];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

@@ -58,6 +58,22 @@ class Stakeholder(models.Model):
         }
         return engagement_values.get(self.desired_engagement, 1)
     
+    def get_influence_value(self):
+        influence_values = {
+            'Low': 1,
+            'Medium': 2,
+            'High': 3
+        }
+        return influence_values.get(self.influence_level, 1)
+
+    def get_interest_value(self):
+        interest_values = {
+            'Low': 1,
+            'Medium': 2,
+            'High': 3
+        }
+        return interest_values.get(self.interest_level, 1)
+    
 class Engagement(models.Model):
     stakeholder = models.ForeignKey(Stakeholder, on_delete=models.CASCADE, related_name='engagements')
     date = models.DateField()
