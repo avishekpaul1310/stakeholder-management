@@ -5,6 +5,7 @@ from django.db.models import Count, Case, When, IntegerField, Value
 from .models import Stakeholder, Engagement
 from .forms import StakeholderForm, EngagementForm
 from django.http import JsonResponse
+import json
 
 @login_required
 def dashboard(request):
@@ -100,7 +101,32 @@ def engagement_create(request, stakeholder_id=None):
 @login_required
 def stakeholder_mapping(request):
     stakeholders = Stakeholder.objects.filter(created_by=request.user)
-    return render(request, 'stakeholders/stakeholder_mapping.html', {'stakeholders': stakeholders})
+    # Prepare data for Power/Interest Grid
+    stakeholders_data = [
+        {
+            'name': s.name,
+            'interest_level': s.interest_level,
+            'influence_level': s.influence_level,
+        }
+        for s in stakeholders
+    ]
+    
+    # Prepare data for Engagement Assessment Chart
+    engagement_data = [
+        {
+            'name': s.name,
+            'current_level': s.get_engagement_level_value(),
+            'desired_level': s.get_desired_engagement_level_value(),
+        }
+        for s in stakeholders
+    ]
+    
+    context = {
+        'stakeholders_json': json.dumps(stakeholders_data),
+        'engagement_data': json.dumps(engagement_data),
+    }
+    
+    return render(request, 'stakeholders/stakeholder_mapping.html', context)
 
 # Add this function to provide data for the grid via AJAX (optional)
 @login_required

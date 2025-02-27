@@ -38,6 +38,26 @@ class Stakeholder(models.Model):
     def __str__(self):
         return f"{self.name} - {self.role}"
     
+    def get_engagement_level_value(self):
+        engagement_values = {
+            'Inform': 1,
+            'Consult': 2,
+            'Involve': 3,
+            'Collaborate': 4,
+            'Empower': 5
+        }
+        return engagement_values.get(self.engagement_strategy, 1)
+
+    def get_desired_engagement_level_value(self):
+        engagement_values = {
+            'Inform': 1,
+            'Consult': 2,
+            'Involve': 3,
+            'Collaborate': 4,
+            'Empower': 5
+        }
+        return engagement_values.get(self.desired_engagement, 1)
+    
 class Engagement(models.Model):
     stakeholder = models.ForeignKey(Stakeholder, on_delete=models.CASCADE, related_name='engagements')
     date = models.DateField()
