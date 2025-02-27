@@ -6,6 +6,7 @@
     <title>{% block title %}Stakeholder Management System{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <!-- Custom CSS -->
@@ -14,6 +15,7 @@
             padding-top: 70px;
             background-color: #f8f9fa;
         }
+    
         .sidebar {
             position: fixed;
             top: 56px;
@@ -26,20 +28,25 @@
             background-color: #f8f9fa;
             border-right: 1px solid #dee2e6;
         }
+    
         .main-content {
             margin-left: 220px;
             padding: 20px;
         }
+    
         .nav-link {
             color: #495057;
         }
+    
         .nav-link:hover {
             color: #007bff;
         }
+    
         .chart-container {
             height: 300px;
             margin-bottom: 20px;
         }
+    
         @media (max-width: 768px) {
             .sidebar {
                 position: static;
@@ -47,13 +54,56 @@
                 border-right: none;
                 border-bottom: 1px solid #dee2e6;
             }
+    
             .main-content {
                 margin-left: 0;
             }
         }
+    
+        /* Navbar improvements */
+        .navbar-dark .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.85);
+            /* Brighter text color */
+            font-weight: 500;
+            /* Slightly bolder */
+            padding: 0.5rem 1rem;
+            transition: color 0.2s ease-in-out;
+        }
+    
+        .navbar-dark .navbar-nav .nav-link:hover,
+        .navbar-dark .navbar-nav .nav-link:focus {
+            color: #ffffff;
+            /* Full white on hover/focus */
+            background-color: rgba(255, 255, 255, 0.1);
+            /* Subtle highlight */
+            border-radius: 4px;
+        }
+    
+        .navbar-dark .navbar-nav .active>.nav-link,
+        .navbar-dark .navbar-nav .nav-link.active {
+            color: #ffffff;
+            /* White for active link */
+            background-color: rgba(255, 255, 255, 0.15);
+            /* Slightly brighter highlight */
+            border-radius: 4px;
+        }
+    
+        /* Add icons to navbar links */
+        .nav-icon {
+            margin-right: 5px;
+            font-size: 1rem;
+        }
+    
+        /* Add a subtle divider between user menu items and nav items */
+        .navbar-nav.ms-auto .nav-item:first-child {
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            margin-left: 10px;
+            padding-left: 10px;
+        }
     </style>
 </head>
 <body>
+    <!-- Replace the navbar section in your base.html template with this -->
     <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'home' %}">Stakeholder MS</a>
@@ -63,34 +113,50 @@
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">Home</a>
+                        <a class="nav-link" href="{% url 'home' %}">
+                            <i class="bi bi-house-door nav-icon"></i> Home
+                        </a>
                     </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+                        <a class="nav-link" href="{% url 'dashboard' %}">
+                            <i class="bi bi-speedometer2 nav-icon"></i> Dashboard
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'stakeholder_list' %}">Stakeholders</a>
+                        <a class="nav-link" href="{% url 'stakeholder_list' %}">
+                            <i class="bi bi-people nav-icon"></i> Stakeholders
+                        </a>
                     </li>
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <span class="nav-link">Welcome, {{ user.username }}</span>
+                        <span class="nav-link">
+                            <i class="bi bi-person-circle nav-icon"></i> Welcome, {{ user.username }}
+                        </span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'profile' %}">Profile</a>
+                        <a class="nav-link" href="{% url 'profile' %}">
+                            <i class="bi bi-gear nav-icon"></i> Profile
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                        <a class="nav-link" href="{% url 'logout' %}">
+                            <i class="bi bi-box-arrow-right nav-icon"></i> Logout
+                        </a>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Login</a>
+                        <a class="nav-link" href="{% url 'login' %}">
+                            <i class="bi bi-box-arrow-in-right nav-icon"></i> Login
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'register' %}">Register</a>
+                        <a class="nav-link" href="{% url 'register' %}">
+                            <i class="bi bi-person-plus nav-icon"></i> Register
+                        </a>
                     </li>
                     {% endif %}
                 </ul>
@@ -128,18 +194,18 @@
                 </div>
             </div>
             <main class="col-md-9 ms-sm-auto col-lg-10 main-content">
-            {% else %}
-            <main class="col-12 px-4">
-            {% endif %}
-                {% if messages %}
+                {% else %}
+                <main class="col-12 px-4">
+                    {% endif %}
+                    {% if messages %}
                     {% for message in messages %}
                     <div class="alert alert-{{ message.tags }}">
                         {{ message }}
                     </div>
                     {% endfor %}
-                {% endif %}
-                {% block content %}{% endblock %}
-            </main>
+                    {% endif %}
+                    {% block content %}{% endblock %}
+                </main>
         </div>
     </div>
 
