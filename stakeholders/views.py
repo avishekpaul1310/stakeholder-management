@@ -132,3 +132,24 @@ def get_stakeholder_data(request):
         })
     
     return JsonResponse({'stakeholders': stakeholder_data})
+
+@login_required
+def stakeholder_grid_data(request):
+    """API endpoint to fetch stakeholder data specifically for the grid visualization."""
+    stakeholders = Stakeholder.objects.filter(created_by=request.user)
+    
+    grid_data = []
+    for stakeholder in stakeholders:
+        grid_data.append({
+            'id': stakeholder.id,
+            'name': stakeholder.name,
+            'role': stakeholder.role,
+            'organization': stakeholder.organization,
+            'influence_level': stakeholder.influence_level,
+            'interest_level': stakeholder.interest_level,
+            'influence_value': stakeholder.get_influence_value(),
+            'interest_value': stakeholder.get_interest_value(),
+            'quadrant': stakeholder.get_quadrant()
+        })
+    
+    return JsonResponse({'stakeholders': grid_data})
