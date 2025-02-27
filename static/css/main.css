@@ -1,0 +1,71 @@
+/* Custom CSS for Stakeholder Management System */
+
+/* Card customization */
+.card {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.card-header {
+    border-top-left-radius: 0.5rem !important;
+    border-top-right-radius: 0.5rem !important;
+}
+
+/* Stats card with colored border */
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+/* Form styling */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+/* Table styling */
+.table thead th {
+    font-weight: 600;
+    background-color: #f8f9fc;
+    border-bottom: 2px solid #e3e6f0;
+}
+
+/* Login/Register page enhancements */
+.auth-card {
+    margin-top: 2rem;
+    max-width: 450px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Dashboard animations */
+.card-hover:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s ease;
+}
+
+/* Sidebar active link */
+.nav-link.active {
+    color: #4e73df !important;
+    font-weight: 600;
+    background-color: rgba(78, 115, 223, 0.1);
+}
+
+/* Footer styling */
+.footer {
+    padding: 1.5rem 0;
+    margin-top: 2rem;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e3e6f0;
+}

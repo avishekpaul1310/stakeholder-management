@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>{{ stakeholder.name }}</h2>
+        <p class="text-muted">{{ stakeholder.role }} at {{ stakeholder.organization }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'stakeholder_update' stakeholder.id %}" class="btn btn-warning me-2">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <a href="{% url 'stakeholder_delete' stakeholder.id %}" class="btn btn-danger">
+            <i class="bi bi-trash"></i> Delete
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Stakeholder Details -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3 bg-light">
+                <h6 class="m-0 font-weight-bold">Stakeholder Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Name:</div>
+                    <div class="col-md-8">{{ stakeholder.name }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Role:</div>
+                    <div class="col-md-8">{{ stakeholder.role }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Organization:</div>
+                    <div class="col-md-8">{{ stakeholder.organization|default:"Not specified" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Email:</div>
+                    <div class="col-md-8">
+                        {% if stakeholder.email %}
+                        <a href="mailto:{{ stakeholder.email }}">{{ stakeholder.email }}</a>
+                        {% else %}
+                        Not specified
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Phone:</div>
+                    <div class="col-md-8">{{ stakeholder.phone|default:"Not specified" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Influence Level:</div>
+                    <div class="col-md-8">
+                        {% if stakeholder.influence_level == 'High' %}
+                        <span class="badge bg-danger">{{ stakeholder.influence_level }}</span>
+                        {% elif stakeholder.influence_level == 'Medium' %}
+                        <span class="badge bg-warning">{{ stakeholder.influence_level }}</span>
+                        {% else %}
+                        <span class="badge bg-info">{{ stakeholder.influence_level }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Engagement Strategy:</div>
+                    <div class="col-md-8">
+                        {% if stakeholder.engagement_strategy == 'Empower' %}
+                        <span class="badge bg-success">{{ stakeholder.engagement_strategy }}</span>
+                        {% elif stakeholder.engagement_strategy == 'Collaborate' %}
+                        <span class="badge bg-primary">{{ stakeholder.engagement_strategy }}</span>
+                        {% elif stakeholder.engagement_strategy == 'Involve' %}
+                        <span class="badge bg-info">{{ stakeholder.engagement_strategy }}</span>
+                        {% elif stakeholder.engagement_strategy == 'Consult' %}
+                        <span class="badge bg-warning">{{ stakeholder.engagement_strategy }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ stakeholder.engagement_strategy }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Created:</div>
+                    <div class="col-md-8">{{ stakeholder.created_at|date:"F j, Y" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3 bg-light">
+                <h6 class="m-0 font-weight-bold">Notes</h6>
+            </div>
+            <div class="card-body">
+                {% if stakeholder.notes %}
+                <p>{{ stakeholder.notes|linebreaks }}</p>
+                {% else %}
+                <p class="text-muted">No notes for this stakeholder.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Engagements Section -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold">Engagement History</h6>
+                <a href="{% url 'stakeholder_engagement_create' stakeholder.id %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> Record Engagement
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Outcome</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for engagement in engagements %}
+                            <tr>
+                                <td>{{ engagement.date }}</td>
+                                <td>{{ engagement.description }}</td>
+                                <td>{{ engagement.outcome|default:"Not recorded" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center">No engagements recorded yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

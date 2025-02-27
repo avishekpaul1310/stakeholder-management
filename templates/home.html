@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4 mb-4">Stakeholder Management System</h1>
+            <p class="lead">
+                An efficient way to manage stakeholders and track engagements for your projects.
+            </p>
+            {% if not user.is_authenticated %}
+            <div class="mt-5">
+                <a href="{% url 'login' %}" class="btn btn-primary btn-lg me-3">Login</a>
+                <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg">Register</a>
+            </div>
+            {% else %}
+            <div class="mt-5">
+                <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

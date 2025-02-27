@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Dashboard</h2>
+        <p class="text-muted">An overview of your stakeholder ecosystem</p>
+        <hr>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Stakeholders</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_stakeholders }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row">
+    <!-- Engagement Strategy Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-light">
+                <h6 class="m-0 font-weight-bold">Stakeholders by Engagement Strategy</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="engagementChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Influence Level Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-light">
+                <h6 class="m-0 font-weight-bold">Stakeholders by Influence Level</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="influenceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Stakeholders Table -->
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold">Recent Stakeholders</h6>
+                <a href="{% url 'stakeholder_list' %}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Influence</th>
+                                <th>Engagement</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stakeholder in stakeholders|slice:":5" %}
+                            <tr>
+                                <td>{{ stakeholder.name }}</td>
+                                <td>{{ stakeholder.role }}</td>
+                                <td>{{ stakeholder.influence_level }}</td>
+                                <td>{{ stakeholder.engagement_strategy }}</td>
+                                <td>
+                                    <a href="{% url 'stakeholder_detail' stakeholder.id %}" class="btn btn-sm btn-info">View</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No stakeholders found. <a href="{% url 'stakeholder_create' %}">Add one now</a>.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Engagement Strategy Chart
+        const engagementData = JSON.parse(`[
+            {% for item in engagement_stats %}
+                { "label": "{{ item.engagement_strategy }}", "count": {{ item.count }} }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]`);
+        
+        const engagementLabels = engagementData.map(item => item.label);
+        const engagementCounts = engagementData.map(item => item.count);
+        const engagementColors = [
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)'
+        ];
+        
+        const engagementCtx = document.getElementById('engagementChart').getContext('2d');
+        const engagementChart = new Chart(engagementCtx, {
+            type: 'doughnut',
+            data: {
+                labels: engagementLabels,
+                datasets: [{
+                    data: engagementCounts,
+                    backgroundColor: engagementColors,
+                    borderColor: engagementColors.map(color => color.replace('0.7', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Influence Level Chart
+        const influenceData = JSON.parse(`[
+            {% for item in influence_stats %}
+                { "label": "{{ item.influence_level }}", "count": {{ item.count }} }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]`);
+        
+        const influenceLabels = influenceData.map(item => item.label);
+        const influenceCounts = influenceData.map(item => item.count);
+        const influenceColors = [
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 206, 86, 0.7)'
+        ];
+        
+        const influenceCtx = document.getElementById('influenceChart').getContext('2d');
+        const influenceChart = new Chart(influenceCtx, {
+            type: 'pie',
+            data: {
+                labels: influenceLabels,
+                datasets: [{
+                    data: influenceCounts,
+                    backgroundColor: influenceColors,
+                    borderColor: influenceColors.map(color => color.replace('0.7', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
