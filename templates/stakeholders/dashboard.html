@@ -146,24 +146,41 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
     // Power/Interest Grid
+    // Update this section in your dashboard.html template, inside the createStakeholderGrid function:
+
     function createStakeholderGrid(stakeholders) {
         const ctx = document.getElementById('dashboardGrid').getContext('2d');
-        
-        // Prepare data for the chart - include labels
+        // Prepare data for the chart
         const gridData = stakeholders.map(s => ({
             x: s.interest,
             y: s.influence,
-            name: s.name
+            name: s.name,
+            quadrant: s.quadrant
         }));
-        
+
+        // Define colors for each quadrant
+        const quadrantColors = {
+            'Manage Closely': 'rgba(220, 53, 69, 0.7)',    // Red for high power, high interest
+            'Keep Satisfied': 'rgba(255, 193, 7, 0.7)',    // Yellow for high power, low interest
+            'Keep Informed': 'rgba(13, 110, 253, 0.7)',    // Blue for low power, high interest
+            'Monitor': 'rgba(108, 117, 125, 0.7)'          // Gray for low power, low interest
+        };
+
+        // Map each stakeholder to its quadrant color
+        const pointBackgroundColors = gridData.map(s => quadrantColors[s.quadrant] || 'rgba(54, 162, 235, 0.7)');
+        const pointBorderColors = gridData.map(s => {
+            const color = quadrantColors[s.quadrant] || 'rgba(54, 162, 235, 1)';
+            return color.replace('0.7', '1.0'); // Make border slightly darker
+        });
+
         const stakeholderGrid = new Chart(ctx, {
             type: 'scatter',
             data: {
                 datasets: [{
                     label: 'Stakeholders',
                     data: gridData,
-                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: pointBackgroundColors,
+                    borderColor: pointBorderColors,
                     borderWidth: 1,
                     pointRadius: 8,
                     pointHoverRadius: 10
@@ -197,8 +214,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                return context.raw.name;
+                            label: function (context) {
+                                const s = context.raw;
+                                return [`${s.name}`, `Quadrant: ${s.quadrant}`];
                             }
                         }
                     },
@@ -210,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         color: '#333',
                         anchor: 'end',
                         align: 'right',
-                        formatter: function(value) {
+                        formatter: function (value) {
                             return value.name;
                         },
                         font: {
@@ -225,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Engagement Chart
     function createEngagementChart(stakeholders) {
         const ctx = document.getElementById('dashboardEngagement').getContext('2d');
-        
+
         // Mapping between numeric engagement levels and text labels
         const engagementLabels = {
             1: 'Inform',
@@ -234,22 +252,22 @@ document.addEventListener('DOMContentLoaded', function() {
             4: 'Collaborate',
             5: 'Empower'
         };
-        
+
         // Sort stakeholders by engagement gap (largest to smallest)
         stakeholders.sort((a, b) => {
             const gapA = Math.abs(a.desired_engagement - a.current_engagement);
             const gapB = Math.abs(b.desired_engagement - b.current_engagement);
             return gapB - gapA;
         });
-        
+
         // Take only the top 5 stakeholders if there are more
         const topStakeholders = stakeholders.slice(0, 5);
-        
+
         // Prepare data for the chart
         const labels = topStakeholders.map(s => s.name);
         const currentData = topStakeholders.map(s => s.current_engagement);
         const desiredData = topStakeholders.map(s => s.desired_engagement);
-        
+
         const engagementChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -285,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         ticks: {
                             stepSize: 1,
-                            callback: function(value) {
+                            callback: function (value) {
                                 return value > 0 ? engagementLabels[value] : '';
                             }
                         }
@@ -294,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 const level = context.raw;
                                 return `${context.dataset.label}: ${level} - ${engagementLabels[level]}`;
                             }

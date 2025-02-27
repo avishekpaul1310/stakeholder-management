@@ -175,30 +175,48 @@ document.addEventListener('DOMContentLoaded', function() {
         window.stakeholderChart.update();
     });
 
+    // Update this section in your stakeholder_mapping.html template inside the createStakeholderGrid function:
+
     function createStakeholderGrid(stakeholders) {
         const ctx = document.getElementById('stakeholderGrid').getContext('2d');
-        
+
         // Add some jitter to prevent exact overlaps
         const jitter = () => (Math.random() - 0.5) * 3;
-        
+
         // Prepare data for the chart
         const gridData = stakeholders.map(s => ({
             x: s.interest + jitter(),
             y: s.influence + jitter(),
             name: s.name,
             id: s.id,
-            role: s.role
+            role: s.role,
+            quadrant: s.quadrant
         }));
-        
+
+        // Define colors for each quadrant
+        const quadrantColors = {
+            'Manage Closely': 'rgba(220, 53, 69, 0.7)',    // Red for high power, high interest
+            'Keep Satisfied': 'rgba(255, 193, 7, 0.7)',    // Yellow for high power, low interest
+            'Keep Informed': 'rgba(13, 110, 253, 0.7)',    // Blue for low power, high interest
+            'Monitor': 'rgba(108, 117, 125, 0.7)'          // Gray for low power, low interest
+        };
+
+        // Map each stakeholder to its quadrant color
+        const pointBackgroundColors = gridData.map(s => quadrantColors[s.quadrant] || 'rgba(54, 162, 235, 0.7)');
+        const pointBorderColors = gridData.map(s => {
+            const color = quadrantColors[s.quadrant] || 'rgba(54, 162, 235, 1)';
+            return color.replace('0.7', '1.0'); // Make border slightly darker
+        });
+
         // Dynamically load Chart.js Datalabels plugin
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0';
         script.async = true;
-        
-        script.onload = function() {
+
+        script.onload = function () {
             // Register the plugin
             Chart.register(ChartDataLabels);
-            
+
             // Create the chart with labels
             const stakeholderGrid = new Chart(ctx, {
                 type: 'scatter',
@@ -206,8 +224,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     datasets: [{
                         label: 'Stakeholders',
                         data: gridData,
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: pointBackgroundColors,
+                        borderColor: pointBorderColors,
                         borderWidth: 1,
                         pointRadius: 8,
                         pointHoverRadius: 12
@@ -241,9 +259,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     plugins: {
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                     const s = context.raw;
-                                    return [`${s.name}`, `Role: ${s.role}`];
+                                    return [`${s.name}`, `Role: ${s.role}`, `Quadrant: ${s.quadrant}`];
                                 }
                             }
                         },
@@ -255,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             display: true,
                             align: 'top',
                             offset: 10,
-                            formatter: function(value) {
+                            formatter: function (value) {
                                 return value.name;
                             },
                             color: '#333',
@@ -276,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             overlap: false
                         }
                     },
-                    onClick: function(event, elements) {
+                    onClick: function (event, elements) {
                         if (elements.length > 0) {
                             const index = elements[0].index;
                             const stakeholder = gridData[index];
@@ -285,10 +303,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
-            
+
             window.stakeholderChart = stakeholderGrid;
         };
-        
+
         document.head.appendChild(script);
     }
 
@@ -301,15 +319,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 const infoSection = doc.querySelector('.card-body');
-                
+
                 if (infoSection) {
                     const modalBody = document.getElementById('stakeholderModalBody');
                     modalBody.innerHTML = infoSection.innerHTML;
-                    
+
                     // Update links in the modal footer
                     document.getElementById('viewStakeholderLink').href = `/stakeholders/${stakeholderId}/detail/`;
                     document.getElementById('editStakeholderLink').href = `/stakeholders/${stakeholderId}/update/`;
-                    
+
                     // Show the modal
                     const modal = new bootstrap.Modal(document.getElementById('stakeholderModal'));
                     modal.show();

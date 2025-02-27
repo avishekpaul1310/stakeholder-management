@@ -1,13 +1,17 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="alert alert-info">
-            <h4>You have been logged out</h4>
-        </div>
-        <div class="text-center mt-3">
-            <a href="{% url 'login' %}" class="btn btn-outline-primary">Login Again</a>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body text-center">
+                    <h4 class="mb-4">You have been successfully logged out</h4>
+                    <p class="mb-4">Thank you for using the Stakeholder Management System.</p>
+                    <a href="{% url 'login' %}" class="btn btn-primary">Log In Again</a>
+                    <a href="{% url 'home' %}" class="btn btn-outline-secondary ml-2">Return to Home</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
