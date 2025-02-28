@@ -1,0 +1,18 @@
+Hello {{ user.first_name|default:user.username }},
+
+You have {{ stakeholders|length }} stakeholders that haven't been engaged with recently:
+
+{% for item in stakeholders %}
+* {{ item.stakeholder.name }} ({{ item.stakeholder.role }})
+  {% if item.days_since %}Last engaged: {{ item.days_since }} days ago{% else %}Never engaged{% endif %}
+  {% if item.priority == 'high' %}HIGH PRIORITY{% endif %}
+{% endfor %}
+
+Maintaining regular engagement with your stakeholders is key to successful stakeholder management.
+
+Visit your stakeholder list: {{ app_url }}/stakeholders/list/
+
+Thank you for using our Stakeholder Management System!
+
+---
+This is an automated email from your Stakeholder Management System. Please do not reply to this email.

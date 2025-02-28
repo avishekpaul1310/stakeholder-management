@@ -148,13 +148,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Power/Interest Grid
     // Update this section in your dashboard.html template, inside the createStakeholderGrid function:
 
+    // Update this section in your dashboard.html template
+
     function createStakeholderGrid(stakeholders) {
         const ctx = document.getElementById('dashboardGrid').getContext('2d');
+
         // Prepare data for the chart
         const gridData = stakeholders.map(s => ({
             x: s.interest,
             y: s.influence,
             name: s.name,
+            role: s.role,
+            organization: s.organization || 'Not specified',
             quadrant: s.quadrant
         }));
 
@@ -213,27 +218,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 plugins: {
                     tooltip: {
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                        titleColor: '#333',
+                        bodyColor: '#666',
+                        borderColor: '#ccc',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: true,
                         callbacks: {
+                            title: function (tooltipItems) {
+                                return tooltipItems[0].raw.name;
+                            },
                             label: function (context) {
                                 const s = context.raw;
-                                return [`${s.name}`, `Quadrant: ${s.quadrant}`];
+                                return [
+                                    `Role: ${s.role}`,
+                                    `Organization: ${s.organization}`,
+                                    `Quadrant: ${s.quadrant}`
+                                ];
                             }
                         }
                     },
                     legend: {
                         display: false
-                    },
-                    // Display name labels next to points
-                    datalabels: {
-                        color: '#333',
-                        anchor: 'end',
-                        align: 'right',
-                        formatter: function (value) {
-                            return value.name;
-                        },
-                        font: {
-                            size: 11
-                        }
                     }
                 }
             }

@@ -1,0 +1,17 @@
+Hello {{ user.first_name|default:user.username }},
+
+You have {{ stakeholders|length }} stakeholders where your current engagement level is lower than your desired engagement level:
+
+{% for item in stakeholders %}
+* {{ item.stakeholder.name }} ({{ item.stakeholder.role }})
+  Current: {{ item.current_level }} → Desired: {{ item.desired_level }}
+{% endfor %}
+
+Improving your engagement level with these stakeholders could lead to better project outcomes and stronger relationships.
+
+View engagement analysis: {{ app_url }}/stakeholders/analysis/
+
+Thank you for using our Stakeholder Management System!
+
+---
+This is an automated email from your Stakeholder Management System. Please do not reply to this email.

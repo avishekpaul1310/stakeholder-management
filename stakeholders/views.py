@@ -6,8 +6,10 @@ from django.contrib import messages
 from django.db.models import Count, Case, When, IntegerField, Value
 from .models import Stakeholder, Engagement
 from .forms import StakeholderForm, EngagementForm
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import json
+import csv
+import io
 
 @login_required
 def dashboard(request):
@@ -153,3 +155,173 @@ def stakeholder_grid_data(request):
         })
     
     return JsonResponse({'stakeholders': grid_data})
+
+@login_required
+def export_stakeholders(request):
+    """Export stakeholders to a CSV file."""
+    # Create the HttpResponse object with the appropriate CSV header
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="stakeholders.csv"'
+    
+    # Get stakeholders for the current user
+    stakeholders = Stakeholder.objects.filter(created_by=request.user)
+    
+    # Create the CSV writer
+    writer = csv.writer(response)
+    writer.writerow(['name', 'role', 'organization', 'email', 'phone', 
+                    'influence_level', 'interest_level', 'engagement_strategy', 
+                    'desired_engagement', 'notes'])
+    
+    # Add stakeholder data
+    for stakeholder in stakeholders:
+        writer.writerow([
+            stakeholder.name,
+            stakeholder.role,
+            stakeholder.organization,
+            stakeholder.email,
+            stakeholder.phone,
+            stakeholder.influence_level,
+            stakeholder.interest_level,
+            stakeholder.engagement_strategy,
+            stakeholder.desired_engagement,
+            stakeholder.notes
+        ])
+    
+    return response
+
+@login_required
+def export_template(request):
+    """Export a CSV template for stakeholder import."""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="stakeholder_template.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['name', 'role', 'organization', 'email', 'phone', 
+                    'influence_level', 'interest_level', 'engagement_strategy', 
+                    'desired_engagement', 'notes'])
+    
+    # Add a sample row to help users
+    writer.writerow([
+        'John Doe', 
+        'CEO', 
+        'Sample Company', 
+        'john@example.com', 
+        '555-123-4567',
+        'High',  # Must be one of: High, Medium, Low
+        'Medium',  # Must be one of: High, Medium, Low
+        'Collaborate',  # Must be one of: Inform, Consult, Involve, Collaborate, Empower
+        'Empower',  # Must be one of: Inform, Consult, Involve, Collaborate, Empower
+        'Sample notes about this stakeholder'
+    ])
+    
+    return response
+
+@login_required
+def import_stakeholders(request):
+    """Import stakeholders from a CSV file."""
+    if request.method == 'POST' and request.FILES.get('csv_file'):
+        csv_file = request.FILES['csv_file']
+        
+        # Check if it's a CSV file
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Please upload a CSV file.')
+            return redirect('stakeholder_list')
+        
+        # Check file size (max 5MB)
+        if csv_file.size > 5 * 1024 * 1024:
+            messages.error(request, 'File is too large. Maximum size is 5MB.')
+            return redirect('stakeholder_list')
+            
+        # Process the file
+        try:
+            csv_data = csv_file.read().decode('utf-8')
+            io_string = io.StringIO(csv_data)
+            reader = csv.DictReader(io_string)
+            
+            # Validate headers
+            required_headers = ['name', 'role', 'influence_level', 'interest_level', 
+                               'engagement_strategy', 'desired_engagement']
+            
+            # Get the headers from the CSV
+            headers = reader.fieldnames
+            
+            # Check if all required headers are present
+            missing_headers = [h for h in required_headers if h not in headers]
+            if missing_headers:
+                messages.error(request, f'Missing required headers: {", ".join(missing_headers)}')
+                return redirect('stakeholder_list')
+            
+            # Valid choices for fields
+            influence_choices = ['High', 'Medium', 'Low']
+            engagement_choices = ['Inform', 'Consult', 'Involve', 'Collaborate', 'Empower']
+            
+            # Process rows
+            row_count = 0
+            success_count = 0
+            error_rows = []
+            
+            for row in reader:
+                row_count += 1
+                
+                # Validate required fields
+                if not row['name'] or not row['role']:
+                    error_rows.append(f"Row {row_count}: Missing required field 'name' or 'role'")
+                    continue
+                    
+                # Validate choice fields
+                if row['influence_level'] not in influence_choices:
+                    error_rows.append(f"Row {row_count}: Invalid influence_level '{row['influence_level']}'")
+                    continue
+                    
+                if row['interest_level'] not in influence_choices:
+                    error_rows.append(f"Row {row_count}: Invalid interest_level '{row['interest_level']}'")
+                    continue
+                    
+                if row['engagement_strategy'] not in engagement_choices:
+                    error_rows.append(f"Row {row_count}: Invalid engagement_strategy '{row['engagement_strategy']}'")
+                    continue
+                    
+                if row['desired_engagement'] not in engagement_choices:
+                    error_rows.append(f"Row {row_count}: Invalid desired_engagement '{row['desired_engagement']}'")
+                    continue
+                
+                # Create the stakeholder
+                try:
+                    stakeholder = Stakeholder(
+                        name=row['name'],
+                        role=row['role'],
+                        organization=row.get('organization', ''),
+                        email=row.get('email', ''),
+                        phone=row.get('phone', ''),
+                        influence_level=row['influence_level'],
+                        interest_level=row['interest_level'],
+                        engagement_strategy=row['engagement_strategy'],
+                        desired_engagement=row['desired_engagement'],
+                        notes=row.get('notes', ''),
+                        created_by=request.user
+                    )
+                    stakeholder.save()
+                    success_count += 1
+                except Exception as e:
+                    error_rows.append(f"Row {row_count}: Error saving stakeholder - {str(e)}")
+            
+            # Show success message
+            if success_count:
+                messages.success(request, f'Successfully imported {success_count} stakeholders.')
+            
+            # Show errors if any
+            if error_rows:
+                for error in error_rows[:5]:  # Show only first 5 errors
+                    messages.warning(request, error)
+                
+                if len(error_rows) > 5:
+                    messages.warning(request, f'... and {len(error_rows) - 5} more errors.')
+            
+        except Exception as e:
+            messages.error(request, f'Error processing CSV file: {str(e)}')
+        
+        return redirect('stakeholder_list')
+    
+    # If not POST or no file
+    messages.error(request, 'No file uploaded.')
+    return redirect('stakeholder_list')

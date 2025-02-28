@@ -14,4 +14,7 @@ urlpatterns = [
     path('api/grid-data/', views.stakeholder_grid_data, name='stakeholder_grid_data'),
     path('analysis/', views.stakeholder_analysis, name='stakeholder_analysis'),
     path('api/stakeholder-data/', views.get_stakeholder_data, name='get_stakeholder_data'),
+    path('export/', views.export_stakeholders, name='export_stakeholders'),
+    path('export/template/', views.export_template, name='export_template'),
+    path('import/', views.import_stakeholders, name='import_stakeholders'),
 ]

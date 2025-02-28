@@ -10,12 +10,87 @@
         <a href="{% url 'stakeholder_create' %}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Add Stakeholder
         </a>
+        <button class="btn btn-outline-secondary ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+            <i class="bi bi-funnel"></i> Filters
+        </button>
+    </div>
+</div>
+
+<!-- Search and Filter Section -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 bg-light">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" id="stakeholderSearch" class="form-control" placeholder="Search stakeholders...">
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <button id="exportCsvBtn" class="btn btn-outline-success">
+                    <i class="bi bi-download"></i> Export to CSV
+                </button>
+                <button class="btn btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="bi bi-upload"></i> Import CSV
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="collapse" id="filterCollapse">
+        <div class="card-body bg-light border-top">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Influence Level</label>
+                    <select id="filterInfluence" class="form-select filter-select">
+                        <option value="">All Influence Levels</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Interest Level</label>
+                    <select id="filterInterest" class="form-select filter-select">
+                        <option value="">All Interest Levels</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Current Engagement</label>
+                    <select id="filterEngagement" class="form-select filter-select">
+                        <option value="">All Engagement Levels</option>
+                        <option value="Inform">Inform</option>
+                        <option value="Consult">Consult</option>
+                        <option value="Involve">Involve</option>
+                        <option value="Collaborate">Collaborate</option>
+                        <option value="Empower">Empower</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Quadrant</label>
+                    <select id="filterQuadrant" class="form-select filter-select">
+                        <option value="">All Quadrants</option>
+                        <option value="Manage Closely">Manage Closely</option>
+                        <option value="Keep Satisfied">Keep Satisfied</option>
+                        <option value="Keep Informed">Keep Informed</option>
+                        <option value="Monitor">Monitor</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12 text-end">
+                    <button id="resetFiltersBtn" class="btn btn-secondary">Reset Filters</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="card shadow mb-4">
     <div class="card-header py-3 bg-light">
-        <h6 class="m-0 font-weight-bold">All Stakeholders</h6>
+        <h6 class="m-0 font-weight-bold">All Stakeholders <span id="stakeholderCount" class="badge bg-primary ms-2">{{ stakeholders.count }}</span></h6>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -26,13 +101,21 @@
                         <th>Role</th>
                         <th>Organization</th>
                         <th>Influence</th>
+                        <th>Interest</th>
                         <th>Engagement Strategy</th>
+                        <th>Quadrant</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for stakeholder in stakeholders %}
-                    <tr>
+                    <tr data-name="{{ stakeholder.name|lower }}" 
+                        data-role="{{ stakeholder.role|lower }}" 
+                        data-organization="{{ stakeholder.organization|lower }}" 
+                        data-influence="{{ stakeholder.influence_level }}" 
+                        data-interest="{{ stakeholder.interest_level }}" 
+                        data-engagement="{{ stakeholder.engagement_strategy }}"
+                        data-quadrant="{{ stakeholder.get_quadrant }}">
                         <td>{{ stakeholder.name }}</td>
                         <td>{{ stakeholder.role }}</td>
                         <td>{{ stakeholder.organization }}</td>
@@ -43,6 +126,15 @@
                             <span class="badge bg-warning">{{ stakeholder.influence_level }}</span>
                             {% else %}
                             <span class="badge bg-info">{{ stakeholder.influence_level }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if stakeholder.interest_level == 'High' %}
+                            <span class="badge bg-danger">{{ stakeholder.interest_level }}</span>
+                            {% elif stakeholder.interest_level == 'Medium' %}
+                            <span class="badge bg-warning">{{ stakeholder.interest_level }}</span>
+                            {% else %}
+                            <span class="badge bg-info">{{ stakeholder.interest_level }}</span>
                             {% endif %}
                         </td>
                         <td>
@@ -59,6 +151,19 @@
                             {% endif %}
                         </td>
                         <td>
+                            {% with quadrant=stakeholder.get_quadrant %}
+                                {% if quadrant == 'Manage Closely' %}
+                                <span class="badge bg-danger">{{ quadrant }}</span>
+                                {% elif quadrant == 'Keep Satisfied' %}
+                                <span class="badge bg-warning text-dark">{{ quadrant }}</span>
+                                {% elif quadrant == 'Keep Informed' %}
+                                <span class="badge bg-primary">{{ quadrant }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ quadrant }}</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>
                             <div class="btn-group">
                                 <a href="{% url 'stakeholder_detail' stakeholder.id %}" class="btn btn-sm btn-info">View</a>
                                 <a href="{% url 'stakeholder_update' stakeholder.id %}" class="btn btn-sm btn-warning">Edit</a>
@@ -68,7 +173,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center">No stakeholders found. <a href="{% url 'stakeholder_create' %}">Add one now</a>.</td>
+                        <td colspan="8" class="text-center">No stakeholders found. <a href="{% url 'stakeholder_create' %}">Add one now</a>.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -76,16 +181,163 @@
         </div>
     </div>
 </div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Stakeholders</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'import_stakeholders' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="csvFile" class="form-label">CSV File</label>
+                        <input class="form-control" type="file" id="csvFile" name="csv_file" accept=".csv" required>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6>CSV Format:</h6>
+                        <p class="mb-1">Your CSV should have these headers:</p>
+                        <small>name,role,organization,email,phone,influence_level,interest_level,engagement_strategy,desired_engagement,notes</small>
+                        <p class="mt-2 mb-0">Download <a href="{% url 'export_template' %}">template</a> for reference.</p>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    $(document).ready(function() {
-        $('#stakeholderTable').DataTable({
-            "paging": true,
-            "ordering": true,
-            "info": true
-        });
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('stakeholderSearch');
+    const filterInfluence = document.getElementById('filterInfluence');
+    const filterInterest = document.getElementById('filterInterest');
+    const filterEngagement = document.getElementById('filterEngagement');
+    const filterQuadrant = document.getElementById('filterQuadrant');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    const stakeholderRows = document.querySelectorAll('#stakeholderTable tbody tr');
+    const stakeholderCount = document.getElementById('stakeholderCount');
+    
+    // CSV Export functionality
+    document.getElementById('exportCsvBtn').addEventListener('click', function() {
+        exportToCSV();
     });
+    
+    // Apply filters and search
+    function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const influence = filterInfluence.value;
+        const interest = filterInterest.value;
+        const engagement = filterEngagement.value;
+        const quadrant = filterQuadrant.value;
+        
+        let visibleCount = 0;
+        
+        stakeholderRows.forEach(row => {
+            if (row.querySelector('td')) {  // Skip empty rows
+                const name = row.getAttribute('data-name') || '';
+                const role = row.getAttribute('data-role') || '';
+                const org = row.getAttribute('data-organization') || '';
+                const rowInfluence = row.getAttribute('data-influence');
+                const rowInterest = row.getAttribute('data-interest');
+                const rowEngagement = row.getAttribute('data-engagement');
+                const rowQuadrant = row.getAttribute('data-quadrant');
+                
+                // Check if row matches all filters
+                const matchesSearch = name.includes(searchTerm) || 
+                                      role.includes(searchTerm) || 
+                                      org.includes(searchTerm);
+                                      
+                const matchesInfluence = !influence || rowInfluence === influence;
+                const matchesInterest = !interest || rowInterest === interest;
+                const matchesEngagement = !engagement || rowEngagement === engagement;
+                const matchesQuadrant = !quadrant || rowQuadrant === quadrant;
+                
+                const visible = matchesSearch && 
+                               matchesInfluence && 
+                               matchesInterest && 
+                               matchesEngagement &&
+                               matchesQuadrant;
+                
+                row.style.display = visible ? '' : 'none';
+                
+                if (visible) visibleCount++;
+            }
+        });
+        
+        // Update the count
+        stakeholderCount.textContent = visibleCount;
+    }
+    
+    // Register event listeners
+    searchInput.addEventListener('input', applyFilters);
+    filterInfluence.addEventListener('change', applyFilters);
+    filterInterest.addEventListener('change', applyFilters);
+    filterEngagement.addEventListener('change', applyFilters);
+    filterQuadrant.addEventListener('change', applyFilters);
+    
+    // Reset filters
+    resetFiltersBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        filterInfluence.value = '';
+        filterInterest.value = '';
+        filterEngagement.value = '';
+        filterQuadrant.value = '';
+        applyFilters();
+    });
+    
+    // Export to CSV function
+    function exportToCSV() {
+        // Get visible rows only
+        const visibleRows = Array.from(stakeholderRows).filter(row => 
+            row.style.display !== 'none' && row.querySelector('td'));
+            
+        if (visibleRows.length === 0) {
+            alert('No stakeholders to export.');
+            return;
+        }
+        
+        // Create CSV content
+        let csvContent = 'name,role,organization,influence_level,interest_level,engagement_strategy,desired_engagement,quadrant\n';
+        
+        visibleRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length > 0) {
+                const name = cells[0].textContent.replace(/,/g, ' ').trim();
+                const role = cells[1].textContent.replace(/,/g, ' ').trim();
+                const org = cells[2].textContent.replace(/,/g, ' ').trim();
+                const influence = row.getAttribute('data-influence');
+                const interest = row.getAttribute('data-interest');
+                const engagement = row.getAttribute('data-engagement');
+                // For desired_engagement, we'll need to get it from the data attribute
+                // Since it's not in the table directly, we'll use a placeholder for now
+                const desired = row.getAttribute('data-desired-engagement') || engagement;
+                const quadrant = row.getAttribute('data-quadrant');
+                
+                csvContent += `${name},${role},${org},${influence},${interest},${engagement},${desired},${quadrant}\n`;
+            }
+        });
+        
+        // Create and download the CSV file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'stakeholders.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+});
 </script>
 {% endblock %}

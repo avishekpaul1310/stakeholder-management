@@ -1,0 +1,108 @@
+<!-- templates/stakeholders/email/engagement_reminder.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            background-color: #4e73df;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fc;
+        }
+        .high-priority {
+            background-color: #ffebee;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #4e73df;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #777;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Stakeholder Engagement Reminder</h1>
+    </div>
+    <div class="content">
+        <p>Hello {{ user.first_name|default:user.username }},</p>
+        
+        <p>You have <strong>{{ stakeholders|length }}</strong> stakeholders that haven't been engaged with recently:</p>
+        
+        <table>
+            <tr>
+                <th>Stakeholder</th>
+                <th>Role</th>
+                <th>Last Engaged</th>
+                <th>Action Needed</th>
+            </tr>
+            {% for item in stakeholders %}
+            <tr{% if item.priority == 'high' %} class="high-priority"{% endif %}>
+                <td><strong>{{ item.stakeholder.name }}</strong></td>
+                <td>{{ item.stakeholder.role }}</td>
+                <td>
+                    {% if item.days_since %}
+                        {{ item.days_since }} days ago
+                    {% else %}
+                        Never
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.priority == 'high' %}
+                        <strong>High priority - engage soon</strong>
+                    {% else %}
+                        Schedule engagement
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        
+        <p>Maintaining regular engagement with your stakeholders is key to successful stakeholder management.</p>
+        
+        <a href="{{ app_url }}/stakeholders/list/" class="cta-button">View Your Stakeholders</a>
+        
+        <p>Thank you for using our Stakeholder Management System!</p>
+    </div>
+    <div class="footer">
+        <p>This is an automated email from your Stakeholder Management System. Please do not reply to this email.</p>
+    </div>
+</body>
+</html>
