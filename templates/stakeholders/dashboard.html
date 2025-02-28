@@ -146,12 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
     // Power/Interest Grid
-    // Update this section in your dashboard.html template, inside the createStakeholderGrid function:
-
-    // Update this section in your dashboard.html template
-
-    // Replace the createStakeholderGrid function in your dashboard.html template with this:
-
+    
     function createStakeholderGrid(stakeholders) {
         const ctx = document.getElementById('dashboardGrid').getContext('2d');
 
@@ -220,7 +215,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 plugins: {
                     tooltip: {
-                        enabled: true,
                         callbacks: {
                             title: function (tooltipItems) {
                                 return tooltipItems[0].raw.name;
@@ -228,8 +222,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             label: function (context) {
                                 const s = context.raw;
                                 return [
-                                    `Role: ${s.role}`,
-                                    `Organization: ${s.organization}`,
+                                    `Role: ${s.role || 'Not specified'}`,
+                                    `Organization: ${s.organization || 'Not specified'}`,
                                     `Quadrant: ${s.quadrant}`
                                 ];
                             }

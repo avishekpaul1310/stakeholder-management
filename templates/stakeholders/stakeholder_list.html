@@ -200,7 +200,9 @@
                     <div class="alert alert-info">
                         <h6>CSV Format:</h6>
                         <p class="mb-1">Your CSV should have these headers:</p>
-                        <small>name,role,organization,email,phone,influence_level,interest_level,engagement_strategy,desired_engagement,notes</small>
+                        <div class="bg-light p-2 rounded mb-2" style="overflow-wrap: break-word; word-wrap: break-word;">
+                            <small>name,role,organization,email,phone,influence_level,interest_level,engagement_strategy,desired_engagement,notes</small>
+                        </div>
                         <p class="mt-2 mb-0">Download <a href="{% url 'export_template' %}">template</a> for reference.</p>
                     </div>
                     <div class="text-end">
