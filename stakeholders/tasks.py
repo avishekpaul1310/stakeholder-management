@@ -4,9 +4,9 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.conf import settings
-from django.db.models import Max
+from django.db.models import Max, F
 from datetime import timedelta
-from .models import Stakeholder, Engagement
+from .models import Stakeholder
 from django.contrib.auth.models import User
 
 def send_engagement_reminders():
@@ -90,7 +90,7 @@ def send_upcoming_engagement_reminders():
     """
     # Get all stakeholders where desired_engagement > engagement_strategy
     stakeholders_to_improve = Stakeholder.objects.exclude(
-        desired_engagement=models.F('engagement_strategy')
+        desired_engagement=F('engagement_strategy')
     )
     
     # Group by user
