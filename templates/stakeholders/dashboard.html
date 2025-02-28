@@ -150,6 +150,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update this section in your dashboard.html template
 
+    // Replace the createStakeholderGrid function in your dashboard.html template with this:
+
     function createStakeholderGrid(stakeholders) {
         const ctx = document.getElementById('dashboardGrid').getContext('2d');
 
@@ -158,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
             x: s.interest,
             y: s.influence,
             name: s.name,
-            role: s.role,
+            role: s.role || 'Not specified',
             organization: s.organization || 'Not specified',
             quadrant: s.quadrant
         }));
@@ -218,13 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 plugins: {
                     tooltip: {
-                        backgroundColor: 'rgba(255,255,255,0.9)',
-                        titleColor: '#333',
-                        bodyColor: '#666',
-                        borderColor: '#ccc',
-                        borderWidth: 1,
-                        padding: 10,
-                        displayColors: true,
+                        enabled: true,
                         callbacks: {
                             title: function (tooltipItems) {
                                 return tooltipItems[0].raw.name;
