@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
     // Power/Interest Grid
-    
+
     function createStakeholderGrid(stakeholders) {
         const ctx = document.getElementById('dashboardGrid').getContext('2d');
 
@@ -222,8 +222,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             label: function (context) {
                                 const s = context.raw;
                                 return [
-                                    `Role: ${s.role || 'Not specified'}`,
-                                    `Organization: ${s.organization || 'Not specified'}`,
+                                    `Role: ${s.role}`,
+                                    `Organization: ${s.organization}`,
                                     `Quadrant: ${s.quadrant}`
                                 ];
                             }
@@ -235,6 +235,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+
+        return stakeholderGrid;
     }
 
     // Engagement Chart
