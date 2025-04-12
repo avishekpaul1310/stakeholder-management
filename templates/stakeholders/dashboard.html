@@ -132,8 +132,14 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Register the ChartDataLabels plugin globally
+    Chart.register(ChartDataLabels);
+    
     // Fetch stakeholder data for both charts
     fetch('{% url "get_stakeholder_data" %}')
         .then(response => response.json())
@@ -146,14 +152,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
     // Power/Interest Grid
-
     function createStakeholderGrid(stakeholders) {
         const ctx = document.getElementById('dashboardGrid').getContext('2d');
 
+        // Add some jitter to prevent exact overlaps (like in the full view)
+        const jitter = () => (Math.random() - 0.5) * 3;
+
         // Prepare data for the chart
         const gridData = stakeholders.map(s => ({
-            x: s.interest,
-            y: s.influence,
+            x: parseFloat(s.interest) + jitter(),
+            y: parseFloat(s.influence) + jitter(),
             name: s.name,
             role: s.role || 'Not specified',
             organization: s.organization || 'Not specified',
@@ -174,105 +182,93 @@ document.addEventListener('DOMContentLoaded', function() {
             const color = quadrantColors[s.quadrant] || 'rgba(54, 162, 235, 1)';
             return color.replace('0.7', '1.0'); // Make border slightly darker
         });
-
-        // Dynamically load Chart.js Datalabels plugin
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0';
-        script.async = true;
-
-        script.onload = function () {
-            // Register the plugin
-            Chart.register(ChartDataLabels);
-            
-            const stakeholderGrid = new Chart(ctx, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: 'Stakeholders',
-                        data: gridData,
-                        backgroundColor: pointBackgroundColors,
-                        borderColor: pointBorderColors,
-                        borderWidth: 1,
-                        pointRadius: 8,
-                        pointHoverRadius: 10
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            min: 0,
-                            max: 100,
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                display: false
-                            }
+        
+        const stakeholderGrid = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Stakeholders',
+                    data: gridData,
+                    backgroundColor: pointBackgroundColors,
+                    borderColor: pointBorderColors,
+                    borderWidth: 1,
+                    pointRadius: 8,
+                    pointHoverRadius: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        min: 0,
+                        max: 100,
+                        grid: {
+                            display: false
                         },
-                        y: {
-                            min: 0,
-                            max: 100,
-                            grid: {
-                                display: false
+                        ticks: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        max: 100,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function (tooltipItems) {
+                                return tooltipItems[0].raw.name;
                             },
-                            ticks: {
-                                display: false
+                            label: function (context) {
+                                const s = context.raw;
+                                return [
+                                    `Role: ${s.role}`,
+                                    `Organization: ${s.organization}`,
+                                    `Quadrant: ${s.quadrant}`
+                                ];
                             }
                         }
                     },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                title: function (tooltipItems) {
-                                    return tooltipItems[0].raw.name;
-                                },
-                                label: function (context) {
-                                    const s = context.raw;
-                                    return [
-                                        `Role: ${s.role}`,
-                                        `Organization: ${s.organization}`,
-                                        `Quadrant: ${s.quadrant}`
-                                    ];
-                                }
-                            }
+                    legend: {
+                        display: false
+                    },
+                    // Configure the datalabels plugin to show stakeholder names
+                    datalabels: {
+                        display: true,
+                        align: 'top',
+                        offset: 8,
+                        formatter: function (value) {
+                            return value.name;
                         },
-                        legend: {
-                            display: false
+                        color: '#333',
+                        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                        borderRadius: 3,
+                        padding: {
+                            top: 2,
+                            bottom: 2,
+                            left: 4,
+                            right: 4
                         },
-                        // Configure the datalabels plugin to show stakeholder names
-                        datalabels: {
-                            display: true,
-                            align: 'top',
-                            offset: 8,
-                            formatter: function (value) {
-                                return value.name;
-                            },
-                            color: '#333',
-                            backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                            borderRadius: 3,
-                            padding: {
-                                top: 2,
-                                bottom: 2,
-                                left: 4,
-                                right: 4
-                            },
-                            font: {
-                                size: 10,
-                                weight: 'bold'
-                            },
-                            clamp: true,
-                            overlap: false
-                        }
+                        font: {
+                            size: 10,
+                            weight: 'bold'
+                        },
+                        clamp: true,
+                        overlap: false
                     }
                 }
-            });
+            }
+        });
 
-            return stakeholderGrid;
-        };
-
-        document.head.appendChild(script);
+        return stakeholderGrid;
     }
 
     // Engagement Chart
@@ -290,18 +286,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Sort stakeholders by engagement gap (largest to smallest)
         stakeholders.sort((a, b) => {
-            const gapA = Math.abs(a.desired_engagement - a.current_engagement);
-            const gapB = Math.abs(b.desired_engagement - b.current_engagement);
+            const gapA = Math.abs(parseFloat(a.desired_engagement) - parseFloat(a.current_engagement));
+            const gapB = Math.abs(parseFloat(b.desired_engagement) - parseFloat(b.current_engagement));
             return gapB - gapA;
         });
 
         // Take only the top 5 stakeholders if there are more
         const topStakeholders = stakeholders.slice(0, 5);
 
-        // Prepare data for the chart
+        // Prepare data for the chart - ensure values are parsed as numbers
         const labels = topStakeholders.map(s => s.name);
-        const currentData = topStakeholders.map(s => s.current_engagement);
-        const desiredData = topStakeholders.map(s => s.desired_engagement);
+        const currentData = topStakeholders.map(s => parseFloat(s.current_engagement));
+        const desiredData = topStakeholders.map(s => parseFloat(s.desired_engagement));
 
         const engagementChart = new Chart(ctx, {
             type: 'bar',
