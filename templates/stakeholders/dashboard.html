@@ -175,68 +175,104 @@ document.addEventListener('DOMContentLoaded', function() {
             return color.replace('0.7', '1.0'); // Make border slightly darker
         });
 
-        const stakeholderGrid = new Chart(ctx, {
-            type: 'scatter',
-            data: {
-                datasets: [{
-                    label: 'Stakeholders',
-                    data: gridData,
-                    backgroundColor: pointBackgroundColors,
-                    borderColor: pointBorderColors,
-                    borderWidth: 1,
-                    pointRadius: 8,
-                    pointHoverRadius: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        min: 0,
-                        max: 100,
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            display: false
-                        }
-                    },
-                    y: {
-                        min: 0,
-                        max: 100,
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            display: false
-                        }
-                    }
+        // Dynamically load Chart.js Datalabels plugin
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0';
+        script.async = true;
+
+        script.onload = function () {
+            // Register the plugin
+            Chart.register(ChartDataLabels);
+            
+            const stakeholderGrid = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Stakeholders',
+                        data: gridData,
+                        backgroundColor: pointBackgroundColors,
+                        borderColor: pointBorderColors,
+                        borderWidth: 1,
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }]
                 },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            title: function (tooltipItems) {
-                                return tooltipItems[0].raw.name;
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                display: false
                             },
-                            label: function (context) {
-                                const s = context.raw;
-                                return [
-                                    `Role: ${s.role}`,
-                                    `Organization: ${s.organization}`,
-                                    `Quadrant: ${s.quadrant}`
-                                ];
+                            ticks: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                display: false
                             }
                         }
                     },
-                    legend: {
-                        display: false
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: function (tooltipItems) {
+                                    return tooltipItems[0].raw.name;
+                                },
+                                label: function (context) {
+                                    const s = context.raw;
+                                    return [
+                                        `Role: ${s.role}`,
+                                        `Organization: ${s.organization}`,
+                                        `Quadrant: ${s.quadrant}`
+                                    ];
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        },
+                        // Configure the datalabels plugin to show stakeholder names
+                        datalabels: {
+                            display: true,
+                            align: 'top',
+                            offset: 8,
+                            formatter: function (value) {
+                                return value.name;
+                            },
+                            color: '#333',
+                            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                            borderRadius: 3,
+                            padding: {
+                                top: 2,
+                                bottom: 2,
+                                left: 4,
+                                right: 4
+                            },
+                            font: {
+                                size: 10,
+                                weight: 'bold'
+                            },
+                            clamp: true,
+                            overlap: false
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        return stakeholderGrid;
+            return stakeholderGrid;
+        };
+
+        document.head.appendChild(script);
     }
 
     // Engagement Chart
