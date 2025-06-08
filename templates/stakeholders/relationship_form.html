@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Stakeholder Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2>Create Relationship</h2>
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-link"></i> New Relationship
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="from_stakeholder" class="form-label">From Stakeholder</label>
+                            <select class="form-select" id="from_stakeholder" name="from_stakeholder" required>
+                                <option value="">Select a stakeholder</option>
+                                {% for stakeholder in stakeholders %}
+                                    <option value="{{ stakeholder.id }}">{{ stakeholder.name }} - {{ stakeholder.role }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="relationship_type" class="form-label">Relationship Type</label>
+                            <select class="form-select" id="relationship_type" name="relationship_type" required>
+                                <option value="">Select relationship type</option>
+                                {% for type_id, type_name in relationship_types %}
+                                    <option value="{{ type_id }}">{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="to_stakeholder" class="form-label">To Stakeholder</label>
+                            <select class="form-select" id="to_stakeholder" name="to_stakeholder" required>
+                                <option value="">Select a stakeholder</option>
+                                {% for stakeholder in stakeholders %}
+                                    <option value="{{ stakeholder.id }}">{{ stakeholder.name }} - {{ stakeholder.role }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="strength" class="form-label">Strength</label>
+                            <select class="form-select" id="strength" name="strength" required>
+                                <option value="1">Weak</option>
+                                <option value="2" selected>Medium</option>
+                                <option value="3">Strong</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'relationship_list' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Relationship</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fromSelect = document.getElementById('from_stakeholder');
+        const toSelect = document.getElementById('to_stakeholder');
+        
+        // Prevent selecting the same stakeholder for both fields
+        fromSelect.addEventListener('change', function() {
+            enableAllOptions(toSelect);
+            disableOption(toSelect, fromSelect.value);
+        });
+        
+        toSelect.addEventListener('change', function() {
+            enableAllOptions(fromSelect);
+            disableOption(fromSelect, toSelect.value);
+        });
+        
+        function enableAllOptions(select) {
+            Array.from(select.options).forEach(option => {
+                option.disabled = false;
+            });
+        }
+        
+        function disableOption(select, value) {
+            if (!value) return;
+            
+            const option = select.querySelector(`option[value="${value}"]`);
+            if (option) {
+                option.disabled = true;
+            }
+        }
+    });
+</script>
+{% endblock %}

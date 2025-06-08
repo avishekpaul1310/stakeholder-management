@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Stakeholder Network | Stakeholder Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2>Stakeholder Network</h2>
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-project-diagram"></i> Network Visualization</span>
+                        <a href="{% url 'relationship_list' %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-list"></i> List View
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="network-legend" class="mb-3">
+                        <div class="d-flex flex-wrap">
+                            <div class="me-4 mb-2">
+                                <span class="badge bg-danger">&nbsp;</span> High Influence, High Interest
+                            </div>
+                            <div class="me-4 mb-2">
+                                <span class="badge bg-warning">&nbsp;</span> High Influence, Low Interest
+                            </div>
+                            <div class="me-4 mb-2">
+                                <span class="badge bg-info">&nbsp;</span> Low Influence, High Interest
+                            </div>
+                            <div class="me-4 mb-2">
+                                <span class="badge bg-secondary">&nbsp;</span> Low Influence, Low Interest
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap mt-2">
+                            <div class="me-4 mb-2">
+                                <span class="relationship-line strong"></span> Strong
+                            </div>
+                            <div class="me-4 mb-2">
+                                <span class="relationship-line medium"></span> Medium
+                            </div>
+                            <div class="me-4 mb-2">
+                                <span class="relationship-line weak"></span> Weak
+                            </div>
+                        </div>
+                    </div>
+                    <div id="network-container" style="height: 600px; border: 1px solid #ddd; border-radius: 4px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-info-circle"></i> Network Information
+                </div>
+                <div class="card-body">
+                    <div id="node-info">
+                        <p class="text-center text-muted">Click on a stakeholder to view details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .relationship-line {
+        display: inline-block;
+        height: 3px;
+        width: 40px;
+        vertical-align: middle;
+    }
+    
+    .relationship-line.strong {
+        background-color: #000;
+        height: 3px;
+    }
+    
+    .relationship-line.medium {
+        background-color: #555;
+        height: 2px;
+    }
+    
+    .relationship-line.weak {
+        background-color: #999;
+        height: 1px;
+    }
+    
+    #network-container .tooltip {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- D3.js for network visualization -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Network data
+        const nodes = {{ nodes_json|safe }};
+        const links = {{ links_json|safe }};
+        
+        // Set up the visualization
+        const width = document.getElementById('network-container').clientWidth;
+        const height = document.getElementById('network-container').clientHeight;
+        
+        // Create SVG
+        const svg = d3.select('#network-container')
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height);
+            
+        // Create tooltip
+        const tooltip = d3.select('#network-container')
+            .append('div')
+            .attr('class', 'tooltip')
+            .style('opacity', 0);
+            
+        // Create arrow markers for different relationship strengths
+        svg.append('defs').selectAll('marker')
+            .data(['weak', 'medium', 'strong'])
+            .enter().append('marker')
+            .attr('id', d => `arrow-${d}`)
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 25)
+            .attr('refY', 0)
+            .attr('markerWidth', 6)
+            .attr('markerHeight', 6)
+            .attr('orient', 'auto')
+            .append('path')
+            .attr('d', 'M0,-5L10,0L0,5')
+            .attr('fill', d => d === 'strong' ? '#000' : (d === 'medium' ? '#555' : '#999'));
+            
+        // Create the links
+        const link = svg.append('g')
+            .selectAll('line')
+            .data(links)
+            .enter().append('line')
+            .attr('stroke', d => d.strength === 3 ? '#000' : (d.strength === 2 ? '#555' : '#999'))
+            .attr('stroke-width', d => d.strength)
+            .attr('marker-end', d => `url(#arrow-${d.strength === 3 ? 'strong' : (d.strength === 2 ? 'medium' : 'weak')})`)
+            .on('mouseover', function(event, d) {
+                tooltip.transition()
+                    .duration(200)
+                    .style('opacity', .9);
+                tooltip.html(`${d.label}`)
+                    .style('left', (event.pageX - document.getElementById('network-container').offsetLeft + 10) + 'px')
+                    .style('top', (event.pageY - document.getElementById('network-container').offsetTop - 28) + 'px');
+            })
+            .on('mouseout', function() {
+                tooltip.transition()
+                    .duration(500)
+                    .style('opacity', 0);
+            });
+            
+        // Create the node circles
+        const node = svg.append('g')
+            .selectAll('circle')
+            .data(nodes)
+            .enter().append('circle')
+            .attr('r', 10)
+            .attr('fill', d => {
+                if (d.influence >= 50 && d.interest >= 50) return '#dc3545'; // High influence, high interest (red)
+                if (d.influence >= 50 && d.interest < 50) return '#ffc107'; // High influence, low interest (yellow)
+                if (d.influence < 50 && d.interest >= 50) return '#17a2b8'; // Low influence, high interest (blue)
+                return '#6c757d'; // Low influence, low interest (grey)
+            })
+            .on('mouseover', function(event, d) {
+                tooltip.transition()
+                    .duration(200)
+                    .style('opacity', .9);
+                tooltip.html(`${d.name} - ${d.role}`)
+                    .style('left', (event.pageX - document.getElementById('network-container').offsetLeft + 10) + 'px')
+                    .style('top', (event.pageY - document.getElementById('network-container').offsetTop - 28) + 'px');
+            })
+            .on('mouseout', function() {
+                tooltip.transition()
+                    .duration(500)
+                    .style('opacity', 0);
+            })
+            .on('click', function(event, d) {
+                showNodeDetails(d);
+            })
+            .call(d3.drag()
+                .on('start', dragStarted)
+                .on('drag', dragging)
+                .on('end', dragEnded));
+                
+        // Add labels to nodes
+        const label = svg.append('g')
+            .selectAll('text')
+            .data(nodes)
+            .enter().append('text')
+            .attr('dx', 12)
+            .attr('dy', '.35em')
+            .text(d => d.name)
+            .style('font-size', '10px');
+            
+        // Create simulation
+        const simulation = d3.forceSimulation(nodes)
+            .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+            .force('charge', d3.forceManyBody().strength(-200))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .on('tick', ticked);
+            
+        function ticked() {
+            link
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+                
+            node
+                .attr('cx', d => d.x = Math.max(10, Math.min(width - 10, d.x)))
+                .attr('cy', d => d.y = Math.max(10, Math.min(height - 10, d.y)));
+                
+            label
+                .attr('x', d => d.x)
+                .attr('y', d => d.y);
+        }
+        
+        function dragStarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+        
+        function dragging(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+        
+        function dragEnded(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+        
+        function showNodeDetails(node) {
+            const nodeInfoDiv = document.getElementById('node-info');
+            nodeInfoDiv.innerHTML = `
+                <h5>${node.name}</h5>
+                <p><strong>Role:</strong> ${node.role}</p>
+                <p><strong>Organization:</strong> ${node.organization || 'Not specified'}</p>
+                <p><strong>Quadrant:</strong> ${node.quadrant}</p>
+                <p><strong>Influence:</strong> ${node.influence / 75 * 100}%</p>
+                <p><strong>Interest:</strong> ${node.interest / 75 * 100}%</p>
+                <a href="/stakeholders/${node.id}/detail/" class="btn btn-sm btn-primary">View Profile</a>
+            `;
+        }
+    });
+</script>
+{% endblock %}

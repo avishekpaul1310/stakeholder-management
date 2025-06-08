@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AI Generated Report | Stakeholder Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2>AI-Generated Stakeholder Report</h2>
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-robot"></i> Stakeholder Management Report</span>
+                        <button id="generate-report-btn" class="btn btn-sm btn-light">
+                            <i class="bi bi-arrow-clockwise"></i> Generate New Report
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="report-container">
+                        <p class="text-center text-muted">Click "Generate New Report" to create an AI-powered analysis of your stakeholder data.</p>
+                    </div>
+                    <div id="report-loading" class="text-center my-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Generating report... This may take a moment.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-grid-3x3"></i> Stakeholder Quadrant Distribution
+                </div>
+                <div class="card-body">
+                    <canvas id="quadrantChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-bar-chart"></i> Engagement Gap Analysis
+                </div>
+                <div class="card-body">
+                    <canvas id="engagementGapChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize charts with zero data - will be populated later
+        const quadrantCtx = document.getElementById('quadrantChart').getContext('2d');
+        const quadrantChart = new Chart(quadrantCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Manage Closely', 'Keep Satisfied', 'Keep Informed', 'Monitor'],
+                datasets: [{
+                    data: [0, 0, 0, 0],
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.7)',
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(23, 162, 184, 0.7)',
+                        'rgba(108, 117, 125, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(23, 162, 184, 1)',
+                        'rgba(108, 117, 125, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Stakeholder Distribution by Quadrant'
+                    }
+                }
+            }
+        });
+        
+        const gapCtx = document.getElementById('engagementGapChart').getContext('2d');
+        const gapChart = new Chart(gapCtx, {
+            type: 'bar',
+            data: {
+                labels: ['No Gap', 'Gap of 1', 'Gap of 2', 'Gap of 3+'],
+                datasets: [{
+                    label: 'Number of Stakeholders',
+                    data: [0, 0, 0, 0],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(255, 119, 7, 0.7)',
+                        'rgba(220, 53, 69, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(255, 119, 7, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Engagement Gap Distribution'
+                    }
+                }
+            }
+        });
+        
+        // Function to update chart data
+        function updateCharts(data) {
+            quadrantChart.data.datasets[0].data = [
+                data.manage_closely,
+                data.keep_satisfied,
+                data.keep_informed,
+                data.monitor
+            ];
+            quadrantChart.update();
+            
+            // Calculate gap distribution
+            const noGap = data.total - data.engagement_gaps;
+            const gaps = data.engagement_gaps; // This is simplified - in a real system we'd have more detailed gap data
+            
+            gapChart.data.datasets[0].data = [noGap, gaps, 0, 0]; // Simplified data
+            gapChart.update();
+        }
+        
+        // Generate report button click handler
+        document.getElementById('generate-report-btn').addEventListener('click', function() {
+            // Show loading indicator
+            document.getElementById('report-loading').style.display = 'block';
+            document.getElementById('report-container').innerHTML = '';
+            
+            // Fetch report from API
+            fetch('{% url "generate_report" %}')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading indicator
+                    document.getElementById('report-loading').style.display = 'none';
+                    
+                    if (data.error) {
+                        document.getElementById('report-container').innerHTML = `
+                            <div class="alert alert-danger">
+                                ${data.error}
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // Display report
+                    let formattedReport = data.report.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+                    let reportHtml = `
+                        <div class="report-content">
+                            <p>${formattedReport}</p>
+                            <div class="mt-4">
+                                <p class="text-muted small">
+                                    <i class="bi bi-info-circle"></i> This report was generated by AI based on your stakeholder data.
+                                    It's meant to provide insights but should be reviewed by you for accuracy.
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('report-container').innerHTML = reportHtml;
+                    
+                    // Update charts if data is available
+                    if (data.stats) {
+                        updateCharts(data.stats);
+                    }
+                })
+                .catch(error => {
+                    // Hide loading indicator and show error
+                    document.getElementById('report-loading').style.display = 'none';
+                    document.getElementById('report-container').innerHTML = `
+                        <div class="alert alert-danger">
+                            Error generating report: ${error.message}
+                        </div>
+                    `;
+                });
+        });
+    });
+</script>
+{% endblock %}

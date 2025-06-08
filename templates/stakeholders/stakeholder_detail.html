@@ -5,14 +5,37 @@
     <div class="col-md-8">
         <h2>{{ stakeholder.name }}</h2>
         <p class="text-muted">{{ stakeholder.role }} at {{ stakeholder.organization }}</p>
+        {% if stakeholder.tags.all %}
+            <div class="mb-2">
+                {% for tag in stakeholder.tags.all %}
+                    <span class="badge mb-1" style="background-color: {{ tag.color }}; color: {% if tag.color == '#ffffff' or tag.color == '#FFFFFF' %}#000000{% else %}#ffffff{% endif %};">
+                        {{ tag.name }}
+                        <a href="{% url 'remove_tag_from_stakeholder' stakeholder_id=stakeholder.id tag_id=tag.id %}" 
+                           class="text-decoration-none" style="color: inherit;" title="Remove tag">
+                            <i class="bi bi-x"></i>
+                        </a>
+                    </span>
+                {% endfor %}
+            </div>
+        {% endif %}
     </div>
     <div class="col-md-4 text-end">
-        <a href="{% url 'stakeholder_update' stakeholder.id %}" class="btn btn-warning me-2">
-            <i class="bi bi-pencil"></i> Edit
-        </a>
-        <a href="{% url 'stakeholder_delete' stakeholder.id %}" class="btn btn-danger">
-            <i class="bi bi-trash"></i> Delete
-        </a>
+        <div class="btn-group mb-2">
+            <a href="{% url 'stakeholder_update' stakeholder.id %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <a href="{% url 'stakeholder_delete' stakeholder.id %}" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Delete
+            </a>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'add_tags_to_stakeholder' stakeholder_id=stakeholder.id %}" class="btn btn-secondary">
+                <i class="bi bi-tags"></i> Add Tags
+            </a>
+            <button id="generate-insights-btn" class="btn btn-primary">
+                <i class="bi bi-lightbulb"></i> Generate Insights
+            </button>
+        </div>
     </div>
 </div>
 
@@ -175,13 +198,15 @@
                     <i class="bi bi-plus-circle"></i> Record Engagement
                 </a>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
+            <div class="card-body">                <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>Date</th>
+                                <th>Channel</th>
                                 <th>Description</th>
+                                <th>Follow-up</th>
+                                <th>Rating</th>
                                 <th>Outcome</th>
                             </tr>
                         </thead>
@@ -189,19 +214,164 @@
                             {% for engagement in engagements %}
                             <tr>
                                 <td>{{ engagement.date }}</td>
+                                <td>{{ engagement.get_communication_channel_display }}</td>
                                 <td>{{ engagement.description }}</td>
+                                <td>
+                                    {% if engagement.follow_up_required %}
+                                        {% if engagement.follow_up_completed %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Due: {{ engagement.follow_up_date }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">None</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if engagement.satisfaction_rating %}
+                                        {% if engagement.satisfaction_rating >= 4 %}
+                                            <span class="badge bg-success">{{ engagement.satisfaction_rating }}/5</span>
+                                        {% elif engagement.satisfaction_rating == 3 %}
+                                            <span class="badge bg-warning text-dark">{{ engagement.satisfaction_rating }}/5</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">{{ engagement.satisfaction_rating }}/5</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">Not rated</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ engagement.outcome|default:"Not recorded" }}</td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="3" class="text-center">No engagements recorded yet.</td>
+                                <td colspan="6" class="text-center">No engagements recorded yet.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
-                    </table>
+                    </table>                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Insights Section -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header py-3 bg-light">
+                <h6 class="m-0 font-weight-bold">AI Engagement Insights</h6>
+            </div>
+            <div class="card-body">
+                <div id="insights-container">
+                    <p class="text-muted text-center">Click "Generate Insights" to get AI-powered recommendations for engaging with this stakeholder.</p>
+                </div>
+                <div id="insights-feedback" class="text-center mt-3" style="display: none;">
+                    <p>Was this insight helpful?</p>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-success" onclick="rateInsight(true)">
+                            <i class="bi bi-hand-thumbs-up"></i> Yes
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="rateInsight(false)">
+                            <i class="bi bi-hand-thumbs-down"></i> No
+                        </button>
+                    </div>
+                </div>
+                <div id="insights-loading" class="text-center my-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Generating insights...</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentInsightId = null;
+    
+    document.getElementById('generate-insights-btn').addEventListener('click', function() {
+        // Show loading indicator
+        document.getElementById('insights-loading').style.display = 'block';
+        document.getElementById('insights-container').innerHTML = '';
+        document.getElementById('insights-feedback').style.display = 'none';
+        
+        // Fetch insights from API
+        fetch('{% url "stakeholder_insights" pk=stakeholder.id %}')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading indicator
+                document.getElementById('insights-loading').style.display = 'none';
+                
+                // Display insights
+                let formattedInsight = data.insight_text.replace(/\n/g, '<br>');
+                let insightHtml = `
+                    <div class="alert ${data.is_new ? 'alert-info' : 'alert-light'} mb-0">
+                        ${formattedInsight}
+                        <div class="mt-2 text-muted small">
+                            ${data.is_new ? 'Generated just now' : 'Generated on ' + data.created_at}
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('insights-container').innerHTML = insightHtml;
+                document.getElementById('insights-feedback').style.display = 'block';
+                currentInsightId = data.insight_id;
+            })
+            .catch(error => {
+                // Hide loading indicator and show error
+                document.getElementById('insights-loading').style.display = 'none';
+                document.getElementById('insights-container').innerHTML = `
+                    <div class="alert alert-danger">
+                        Error generating insights: ${error.message}
+                    </div>
+                `;
+            });
+    });
+    
+    function rateInsight(isHelpful) {
+        if (currentInsightId) {
+            fetch('{% url "mark_insight_helpful" pk=0 %}'.replace('0', currentInsightId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ is_helpful: isHelpful })
+            })
+            .then(() => {
+                document.getElementById('insights-feedback').innerHTML = `
+                    <div class="alert alert-success">
+                        Thanks for your feedback!
+                    </div>
+                `;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
 {% endblock %}

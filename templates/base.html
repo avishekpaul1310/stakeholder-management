@@ -122,11 +122,37 @@
                         <a class="nav-link" href="{% url 'dashboard' %}">
                             <i class="bi bi-speedometer2 nav-icon"></i> Dashboard
                         </a>
-                    </li>
-                    <li class="nav-item">
+                    </li>                    <li class="nav-item">
                         <a class="nav-link" href="{% url 'stakeholder_list' %}">
                             <i class="bi bi-people nav-icon"></i> Stakeholders
                         </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'relationship_list' %}">
+                            <i class="bi bi-diagram-3 nav-icon"></i> Relationships
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'tag_list' %}">
+                            <i class="bi bi-tags nav-icon"></i> Tags
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'activity_feed' %}">
+                            <i class="bi bi-activity nav-icon"></i> Activity Feed
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="analysisDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-bar-chart nav-icon"></i> Analysis
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'stakeholder_mapping' %}">Power/Interest Grid</a></li>
+                            <li><a class="dropdown-item" href="{% url 'stakeholder_analysis' %}">Engagement Analysis</a></li>
+                            <li><a class="dropdown-item" href="{% url 'stakeholder_network' %}">Network Visualization</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'generate_report' %}">Generate AI Report</a></li>
+                        </ul>
                     </li>
                     {% endif %}
                 </ul>

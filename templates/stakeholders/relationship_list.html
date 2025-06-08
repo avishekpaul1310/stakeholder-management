@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Stakeholder Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2>Stakeholder Relationships</h2>
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="btn-group">
+                <a href="{% url 'create_relationship' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Relationship
+                </a>
+                <a href="{% url 'stakeholder_network' %}" class="btn btn-info">
+                    <i class="fas fa-project-diagram"></i> View Network Map
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-link"></i> Relationships
+                </div>
+                <div class="card-body">
+                    {% if relationships %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>From Stakeholder</th>
+                                        <th>Relationship</th>
+                                        <th>To Stakeholder</th>
+                                        <th>Strength</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for relationship in relationships %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'stakeholder_detail' pk=relationship.from_stakeholder.id %}">
+                                                    {{ relationship.from_stakeholder.name }}
+                                                </a>
+                                            </td>
+                                            <td>{{ relationship.get_relationship_type_display }}</td>
+                                            <td>
+                                                <a href="{% url 'stakeholder_detail' pk=relationship.to_stakeholder.id %}">
+                                                    {{ relationship.to_stakeholder.name }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                {% if relationship.strength == 1 %}
+                                                    <span class="badge bg-secondary">Weak</span>
+                                                {% elif relationship.strength == 2 %}
+                                                    <span class="badge bg-primary">Medium</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Strong</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'delete_relationship' pk=relationship.id %}" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p>No relationships defined yet.</p>
+                        <a href="{% url 'create_relationship' %}" class="btn btn-outline-primary">Create your first relationship</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
