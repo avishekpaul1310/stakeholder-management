@@ -95,17 +95,17 @@ def stakeholder_delete(request, pk):
         # Save a copy of relationships for logging
         from_relationships = list(stakeholder.relationships_from.all())
         to_relationships = list(stakeholder.relationships_to.all())
-        
-        # Delete the stakeholder
-        stakeholder.delete()
-        
-        # Log deletion activity
+          # Log activity
         Activity.objects.create(
             user=request.user,
             activity_type='deleted',
             stakeholder_name=stakeholder_name,
+            stakeholder_id=None,
             description=f"Deleted stakeholder {stakeholder_name}"
         )
+        
+        # Delete the stakeholder
+        stakeholder.delete()
         
         messages.success(request, 'Stakeholder deleted successfully!')
         return redirect('stakeholder_list')

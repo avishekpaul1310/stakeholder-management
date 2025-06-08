@@ -141,14 +141,16 @@
                         <a class="nav-link" href="{% url 'activity_feed' %}">
                             <i class="bi bi-activity nav-icon"></i> Activity Feed
                         </a>
-                    </li>
-                    <li class="nav-item dropdown">
+                    </li>                    <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="analysisDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-bar-chart nav-icon"></i> Analysis
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{% url 'stakeholder_mapping' %}">Power/Interest Grid</a></li>
                             <li><a class="dropdown-item" href="{% url 'stakeholder_analysis' %}">Engagement Analysis</a></li>
+                            <li><a class="dropdown-item" href="{% url 'stakeholder_network' %}">Network Visualization</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'generate_report' %}">AI-Generated Report</a></li>
                             <li><a class="dropdown-item" href="{% url 'stakeholder_network' %}">Network Visualization</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'generate_report' %}">Generate AI Report</a></li>

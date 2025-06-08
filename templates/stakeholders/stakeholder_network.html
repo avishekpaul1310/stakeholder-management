@@ -105,11 +105,10 @@
 {% block extra_js %}
 <!-- D3.js for network visualization -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+<script>    document.addEventListener('DOMContentLoaded', function() {
         // Network data
-        const nodes = {{ nodes_json|safe }};
-        const links = {{ links_json|safe }};
+        const nodes = JSON.parse('{{ nodes_json|escapejs }}');
+        const links = JSON.parse('{{ links_json|escapejs }}');
         
         // Set up the visualization
         const width = document.getElementById('network-container').clientWidth;

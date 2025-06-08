@@ -38,8 +38,7 @@
                                                 <span class="badge" style="background-color: {{ tag.color }}; color: {% if tag.color == '#ffffff' or tag.color == '#FFFFFF' %}#000000{% else %}#ffffff{% endif %};">
                                                     {{ tag.name }}
                                                 </span>
-                                            </td>
-                                            <td>
+                                            </td>                                            <td>
                                                 <div style="width: 25px; height: 25px; background-color: {{ tag.color }}; border-radius: 4px; border: 1px solid #ddd;"></div>
                                             </td>
                                             <td>{{ tag.created_at|date:"M d, Y" }}</td>

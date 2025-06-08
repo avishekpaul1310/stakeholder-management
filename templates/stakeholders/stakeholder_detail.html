@@ -7,8 +7,7 @@
         <p class="text-muted">{{ stakeholder.role }} at {{ stakeholder.organization }}</p>
         {% if stakeholder.tags.all %}
             <div class="mb-2">
-                {% for tag in stakeholder.tags.all %}
-                    <span class="badge mb-1" style="background-color: {{ tag.color }}; color: {% if tag.color == '#ffffff' or tag.color == '#FFFFFF' %}#000000{% else %}#ffffff{% endif %};">
+                {% for tag in stakeholder.tags.all %}                    <span class="badge mb-1" style="background-color: {{ tag.color }}; color: {% if tag.color == '#ffffff' or tag.color == '#FFFFFF' %}#000000{% else %}#ffffff{% endif %}">
                         {{ tag.name }}
                         <a href="{% url 'remove_tag_from_stakeholder' stakeholder_id=stakeholder.id tag_id=tag.id %}" 
                            class="text-decoration-none" style="color: inherit;" title="Remove tag">
